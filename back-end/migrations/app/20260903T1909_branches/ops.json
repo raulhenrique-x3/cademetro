@@ -1,0 +1,570 @@
+[
+  {
+    "id": "dropTable.stationLine",
+    "label": "Drop table \"stationLine\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"stationLine\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"stationLine\"",
+        "sql": "DROP TABLE \"public\".\"stationLine\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"stationLine\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.branch",
+    "label": "Create table \"branch\"",
+    "summary": "Creates table \"branch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"branch\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"branch\"",
+        "sql": "CREATE TABLE \"public\".\"branch\" (\n  \"code\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lineId\" int4 NOT NULL,\n  \"name\" text NOT NULL,\n  \"order\" int4 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"branch\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.branchStation",
+    "label": "Create table \"branchStation\"",
+    "summary": "Creates table \"branchStation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"branchStation\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"branchStation\"",
+        "sql": "CREATE TABLE \"public\".\"branchStation\" (\n  \"branchId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"order\" int4 NOT NULL,\n  \"stationId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"branchStation\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.branch.branch_lineId_name_key",
+    "label": "Add unique constraint on \"branch\" (lineId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "branch_lineId_name_key",
+        "table": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"branch_lineId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_name_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"branch_lineId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"branch\" ADD CONSTRAINT \"branch_lineId_name_key\" UNIQUE (\"lineId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"branch_lineId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_name_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.branch.branch_lineId_code_key",
+    "label": "Add unique constraint on \"branch\" (lineId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "branch_lineId_code_key",
+        "table": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"branch_lineId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_code_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"branch_lineId_code_key\"",
+        "sql": "ALTER TABLE \"public\".\"branch\" ADD CONSTRAINT \"branch_lineId_code_key\" UNIQUE (\"lineId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"branch_lineId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_code_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.branch.branch_lineId_order_key",
+    "label": "Add unique constraint on \"branch\" (lineId, order)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "branch_lineId_order_key",
+        "table": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"branch_lineId_order_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_order_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"branch_lineId_order_key\"",
+        "sql": "ALTER TABLE \"public\".\"branch\" ADD CONSTRAINT \"branch_lineId_order_key\" UNIQUE (\"lineId\", \"order\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"branch_lineId_order_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_order_key",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.branchStation.branchStation_branchId_stationId_key",
+    "label": "Add unique constraint on \"branchStation\" (branchId, stationId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "branchStation_branchId_stationId_key",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"branchStation_branchId_stationId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_stationId_key",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"branchStation_branchId_stationId_key\"",
+        "sql": "ALTER TABLE \"public\".\"branchStation\" ADD CONSTRAINT \"branchStation_branchId_stationId_key\" UNIQUE (\"branchId\", \"stationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"branchStation_branchId_stationId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_stationId_key",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.branchStation.branchStation_branchId_order_key",
+    "label": "Add unique constraint on \"branchStation\" (branchId, order)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "branchStation_branchId_order_key",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"branchStation_branchId_order_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_order_key",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"branchStation_branchId_order_key\"",
+        "sql": "ALTER TABLE \"public\".\"branchStation\" ADD CONSTRAINT \"branchStation_branchId_order_key\" UNIQUE (\"branchId\", \"order\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"branchStation_branchId_order_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_order_key",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.branch.branch_lineId_idx_4b6c5a21",
+    "label": "Create index \"branch_lineId_idx_4b6c5a21\" on \"branch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "branch_lineId_idx_4b6c5a21",
+        "table": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"branch_lineId_idx_4b6c5a21\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branch_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"branch_lineId_idx_4b6c5a21\"",
+        "sql": "CREATE INDEX \"branch_lineId_idx_4b6c5a21\" ON \"public\".\"branch\" (\"lineId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"branch_lineId_idx_4b6c5a21\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branch_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.branchStation.branchStation_branchId_idx_d04da5bb",
+    "label": "Create index \"branchStation_branchId_idx_d04da5bb\" on \"branchStation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "branchStation_branchId_idx_d04da5bb",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"branchStation_branchId_idx_d04da5bb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation_branchId_idx_d04da5bb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"branchStation_branchId_idx_d04da5bb\"",
+        "sql": "CREATE INDEX \"branchStation_branchId_idx_d04da5bb\" ON \"public\".\"branchStation\" (\"branchId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"branchStation_branchId_idx_d04da5bb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation_branchId_idx_d04da5bb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.branchStation.branchStation_stationId_idx_0626a60c",
+    "label": "Create index \"branchStation_stationId_idx_0626a60c\" on \"branchStation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "branchStation_stationId_idx_0626a60c",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"branchStation_stationId_idx_0626a60c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation_stationId_idx_0626a60c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"branchStation_stationId_idx_0626a60c\"",
+        "sql": "CREATE INDEX \"branchStation_stationId_idx_0626a60c\" ON \"public\".\"branchStation\" (\"stationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"branchStation_stationId_idx_0626a60c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"branchStation_stationId_idx_0626a60c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.branch.branch_lineId_fkey",
+    "label": "Add foreign key \"branch_lineId_fkey\" on \"branch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "branch_lineId_fkey",
+        "table": "branch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"branch_lineId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_fkey",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"branch_lineId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"branch\"\nADD CONSTRAINT \"branch_lineId_fkey\"\nFOREIGN KEY (\"lineId\")\nREFERENCES \"public\".\"line\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"branch_lineId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branch_lineId_fkey",
+          "public",
+          "\"public\".\"branch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.branchStation.branchStation_branchId_fkey",
+    "label": "Add foreign key \"branchStation_branchId_fkey\" on \"branchStation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "branchStation_branchId_fkey",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"branchStation_branchId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_fkey",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"branchStation_branchId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"branchStation\"\nADD CONSTRAINT \"branchStation_branchId_fkey\"\nFOREIGN KEY (\"branchId\")\nREFERENCES \"public\".\"branch\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"branchStation_branchId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_branchId_fkey",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.branchStation.branchStation_stationId_fkey",
+    "label": "Add foreign key \"branchStation_stationId_fkey\" on \"branchStation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "branchStation_stationId_fkey",
+        "table": "branchStation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"branchStation_stationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_stationId_fkey",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"branchStation_stationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"branchStation\"\nADD CONSTRAINT \"branchStation_stationId_fkey\"\nFOREIGN KEY (\"stationId\")\nREFERENCES \"public\".\"station\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"branchStation_stationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "branchStation_stationId_fkey",
+          "public",
+          "\"public\".\"branchStation\""
+        ]
+      }
+    ]
+  }
+]

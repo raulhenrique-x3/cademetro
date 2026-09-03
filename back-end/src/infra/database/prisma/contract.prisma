@@ -1,0 +1,157 @@
+// use prisma-next
+
+enum ReportType {
+  TRAIN_ARRIVING
+  TRAIN_ARRIVED
+  TRAIN_DEPARTED
+  TRAIN_STOPPED
+  OPERATIONAL_RESTRICTION
+  SERVICE_INTERRUPTION
+  NORMAL_OPERATION
+}
+
+enum ConfirmationType {
+  CONFIRM
+  DISPUTE
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            Int                  @id @default(autoincrement())
+  email         String               @unique
+  passwordHash  String
+  username      String?
+  name          String?
+  role          UserRole             @default(USER)
+  status        UserStatus           @default(ACTIVE)
+  reports       Report[]
+  confirmations ReportConfirmation[]
+  refreshTokens RefreshToken[]
+  createdAt     TimestamptzString    @default(now())
+  updatedAt     temporal.updatedAtString()
+}
+
+model RefreshToken {
+  id        Int               @id @default(autoincrement())
+  userId    Int
+  tokenHash String            @unique
+  expiresAt TimestamptzString
+  revokedAt TimestamptzString?
+  user      User              @relation(fields: [userId], references: [id])
+  createdAt TimestamptzString @default(now())
+
+  @@index([userId])
+}
+
+model Line {
+  id           Int               @id @default(autoincrement())
+  name         String
+  code         String            @unique
+  color        String
+  branches     Branch[]
+  directions   Direction[]
+  reports      Report[]
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+}
+
+model Branch {
+  id             Int               @id @default(autoincrement())
+  lineId         Int
+  name           String
+  code           String
+  order          Int
+  line           Line              @relation(fields: [lineId], references: [id])
+  branchStations BranchStation[]
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+
+  @@unique([lineId, name])
+  @@unique([lineId, code])
+  @@unique([lineId, order])
+}
+
+model BranchStation {
+  id        Int      @id @default(autoincrement())
+  branchId  Int
+  stationId Int
+  order     Int
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  station   Station  @relation(fields: [stationId], references: [id])
+
+  @@unique([branchId, stationId])
+  @@unique([branchId, order])
+}
+
+model Station {
+  id             Int               @id @default(autoincrement())
+  name           String            @unique
+  code           String?
+  latitude       Float
+  longitude      Float
+  branchStations BranchStation[]
+  reports        Report[]
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+}
+
+model Direction {
+  id        Int      @id @default(autoincrement())
+  lineId    Int
+  name      String
+  code      String
+  line      Line     @relation(fields: [lineId], references: [id])
+  reports   Report[]
+
+  @@unique([lineId, name])
+}
+
+model Report {
+  id           Int                    @id @default(autoincrement())
+  type         ReportType
+  lineId       Int
+  stationId    Int?
+  directionId  Int?
+  authorId     Int
+  description  String?
+  locationLat  Float?
+  locationLng  Float?
+  isHidden     Boolean                @default(false)
+  hiddenReason String?
+  line         Line                   @relation(fields: [lineId], references: [id])
+  station      Station?               @relation(fields: [stationId], references: [id])
+  direction    Direction?             @relation(fields: [directionId], references: [id])
+  author       User                   @relation(fields: [authorId], references: [id])
+  confirmations ReportConfirmation[]
+  createdAt    TimestamptzString      @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  @@index([lineId, createdAt])
+  @@index([stationId, createdAt])
+  @@index([directionId, createdAt])
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model ReportConfirmation {
+  id        Int              @id @default(autoincrement())
+  reportId  Int
+  userId    Int
+  type      ConfirmationType
+  report    Report           @relation(fields: [reportId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
+  createdAt TimestamptzString @default(now())
+
+  @@unique([reportId, userId])
+  @@index([reportId, type])
+}

@@ -1,0 +1,1672 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.direction",
+    "label": "Create table \"direction\"",
+    "summary": "Creates table \"direction\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "direction"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"direction\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"direction\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"direction\"",
+        "sql": "CREATE TABLE \"public\".\"direction\" (\n  \"code\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lineId\" int4 NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"direction\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"direction\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.line",
+    "label": "Create table \"line\"",
+    "summary": "Creates table \"line\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "line"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"line\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"line\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"line\"",
+        "sql": "CREATE TABLE \"public\".\"line\" (\n  \"code\" text NOT NULL,\n  \"color\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"line\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"line\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.refreshToken",
+    "label": "Create table \"refreshToken\"",
+    "summary": "Creates table \"refreshToken\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "refreshToken"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"refreshToken\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"refreshToken\"",
+        "sql": "CREATE TABLE \"public\".\"refreshToken\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"revokedAt\" timestamptz,\n  \"tokenHash\" text NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"refreshToken\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.report",
+    "label": "Create table \"report\"",
+    "summary": "Creates table \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"report\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"report\"",
+        "sql": "CREATE TABLE \"public\".\"report\" (\n  \"authorId\" int4 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"directionId\" int4,\n  \"hiddenReason\" text,\n  \"id\" SERIAL NOT NULL,\n  \"isHidden\" bool DEFAULT false NOT NULL,\n  \"lineId\" int4 NOT NULL,\n  \"locationLat\" float8,\n  \"locationLng\" float8,\n  \"stationId\" int4,\n  \"type\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"report_type_check_29511d4d\" CHECK (\"type\" IN ('TRAIN_ARRIVING', 'TRAIN_ARRIVED', 'TRAIN_DEPARTED', 'TRAIN_STOPPED', 'OPERATIONAL_RESTRICTION', 'SERVICE_INTERRUPTION', 'NORMAL_OPERATION'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"report\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.reportConfirmation",
+    "label": "Create table \"reportConfirmation\"",
+    "summary": "Creates table \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"reportConfirmation\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"reportConfirmation\"",
+        "sql": "CREATE TABLE \"public\".\"reportConfirmation\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"reportId\" int4 NOT NULL,\n  \"type\" text NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"reportConfirmation_type_check_d38ad0a0\" CHECK (\"type\" IN ('CONFIRM', 'DISPUTE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"reportConfirmation\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.station",
+    "label": "Create table \"station\"",
+    "summary": "Creates table \"station\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "station"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"station\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"station\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"station\"",
+        "sql": "CREATE TABLE \"public\".\"station\" (\n  \"code\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"latitude\" float8 NOT NULL,\n  \"longitude\" float8 NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"station\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"station\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.stationLine",
+    "label": "Create table \"stationLine\"",
+    "summary": "Creates table \"stationLine\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"stationLine\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"stationLine\"",
+        "sql": "CREATE TABLE \"public\".\"stationLine\" (\n  \"id\" SERIAL NOT NULL,\n  \"lineId\" int4 NOT NULL,\n  \"order\" int4 NOT NULL,\n  \"stationId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"stationLine\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.user",
+    "label": "Create table \"user\"",
+    "summary": "Creates table \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"user\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"user\"",
+        "sql": "CREATE TABLE \"public\".\"user\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text,\n  \"passwordHash\" text NOT NULL,\n  \"role\" text DEFAULT 'USER' NOT NULL,\n  \"status\" text DEFAULT 'ACTIVE' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"username\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"user_role_check_5fbc0f9e\" CHECK (\"role\" IN ('USER', 'MODERATOR', 'ADMIN')),\n  CONSTRAINT \"user_status_check_1527ac15\" CHECK (\"status\" IN ('ACTIVE', 'SUSPENDED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"user\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.direction.direction_lineId_name_key",
+    "label": "Add unique constraint on \"direction\" (lineId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "direction_lineId_name_key",
+        "table": "direction"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"direction_lineId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "direction_lineId_name_key",
+          "public",
+          "\"public\".\"direction\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"direction_lineId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"direction\" ADD CONSTRAINT \"direction_lineId_name_key\" UNIQUE (\"lineId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"direction_lineId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "direction_lineId_name_key",
+          "public",
+          "\"public\".\"direction\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.line.line_code_key",
+    "label": "Add unique constraint on \"line\" (code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "line_code_key",
+        "table": "line"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"line_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "line_code_key",
+          "public",
+          "\"public\".\"line\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"line_code_key\"",
+        "sql": "ALTER TABLE \"public\".\"line\" ADD CONSTRAINT \"line_code_key\" UNIQUE (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"line_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "line_code_key",
+          "public",
+          "\"public\".\"line\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.refreshToken.refreshToken_tokenHash_key",
+    "label": "Add unique constraint on \"refreshToken\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "refreshToken_tokenHash_key",
+        "table": "refreshToken"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"refreshToken_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refreshToken_tokenHash_key",
+          "public",
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"refreshToken_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"refreshToken\" ADD CONSTRAINT \"refreshToken_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"refreshToken_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refreshToken_tokenHash_key",
+          "public",
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.reportConfirmation.reportConfirmation_reportId_userId_key",
+    "label": "Add unique constraint on \"reportConfirmation\" (reportId, userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "reportConfirmation_reportId_userId_key",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"reportConfirmation_reportId_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_reportId_userId_key",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"reportConfirmation_reportId_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"reportConfirmation\" ADD CONSTRAINT \"reportConfirmation_reportId_userId_key\" UNIQUE (\"reportId\", \"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"reportConfirmation_reportId_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_reportId_userId_key",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.station.station_name_key",
+    "label": "Add unique constraint on \"station\" (name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "station_name_key",
+        "table": "station"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"station_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "station_name_key",
+          "public",
+          "\"public\".\"station\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"station_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"station\" ADD CONSTRAINT \"station_name_key\" UNIQUE (\"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"station_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "station_name_key",
+          "public",
+          "\"public\".\"station\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.stationLine.stationLine_lineId_stationId_key",
+    "label": "Add unique constraint on \"stationLine\" (lineId, stationId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "stationLine_lineId_stationId_key",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"stationLine_lineId_stationId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_stationId_key",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"stationLine_lineId_stationId_key\"",
+        "sql": "ALTER TABLE \"public\".\"stationLine\" ADD CONSTRAINT \"stationLine_lineId_stationId_key\" UNIQUE (\"lineId\", \"stationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"stationLine_lineId_stationId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_stationId_key",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.stationLine.stationLine_lineId_order_key",
+    "label": "Add unique constraint on \"stationLine\" (lineId, order)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "stationLine_lineId_order_key",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"stationLine_lineId_order_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_order_key",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"stationLine_lineId_order_key\"",
+        "sql": "ALTER TABLE \"public\".\"stationLine\" ADD CONSTRAINT \"stationLine_lineId_order_key\" UNIQUE (\"lineId\", \"order\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"stationLine_lineId_order_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_order_key",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.user.user_email_key",
+    "label": "Add unique constraint on \"user\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "user_email_key",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"user_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.direction.direction_lineId_idx_4b6c5a21",
+    "label": "Create index \"direction_lineId_idx_4b6c5a21\" on \"direction\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "direction_lineId_idx_4b6c5a21",
+        "table": "direction"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"direction_lineId_idx_4b6c5a21\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"direction_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"direction_lineId_idx_4b6c5a21\"",
+        "sql": "CREATE INDEX \"direction_lineId_idx_4b6c5a21\" ON \"public\".\"direction\" (\"lineId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"direction_lineId_idx_4b6c5a21\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"direction_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.refreshToken.refreshToken_userId_idx_a489d58a",
+    "label": "Create index \"refreshToken_userId_idx_a489d58a\" on \"refreshToken\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "refreshToken_userId_idx_a489d58a",
+        "table": "refreshToken"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"refreshToken_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refreshToken_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"refreshToken_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"refreshToken_userId_idx_a489d58a\" ON \"public\".\"refreshToken\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"refreshToken_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refreshToken_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_authorId_idx_e47547ed",
+    "label": "Create index \"report_authorId_idx_e47547ed\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_authorId_idx_e47547ed",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_authorId_idx_e47547ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_authorId_idx_e47547ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_authorId_idx_e47547ed\"",
+        "sql": "CREATE INDEX \"report_authorId_idx_e47547ed\" ON \"public\".\"report\" (\"authorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_authorId_idx_e47547ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_authorId_idx_e47547ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_createdAt_idx_9575dbd7",
+    "label": "Create index \"report_createdAt_idx_9575dbd7\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_createdAt_idx_9575dbd7",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_createdAt_idx_9575dbd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_createdAt_idx_9575dbd7\"",
+        "sql": "CREATE INDEX \"report_createdAt_idx_9575dbd7\" ON \"public\".\"report\" (\"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_createdAt_idx_9575dbd7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_directionId_createdAt_idx_5d18901e",
+    "label": "Create index \"report_directionId_createdAt_idx_5d18901e\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_directionId_createdAt_idx_5d18901e",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_directionId_createdAt_idx_5d18901e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_directionId_createdAt_idx_5d18901e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_directionId_createdAt_idx_5d18901e\"",
+        "sql": "CREATE INDEX \"report_directionId_createdAt_idx_5d18901e\" ON \"public\".\"report\" (\"directionId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_directionId_createdAt_idx_5d18901e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_directionId_createdAt_idx_5d18901e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_directionId_idx_ed5c7ee6",
+    "label": "Create index \"report_directionId_idx_ed5c7ee6\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_directionId_idx_ed5c7ee6",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_directionId_idx_ed5c7ee6\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_directionId_idx_ed5c7ee6\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_directionId_idx_ed5c7ee6\"",
+        "sql": "CREATE INDEX \"report_directionId_idx_ed5c7ee6\" ON \"public\".\"report\" (\"directionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_directionId_idx_ed5c7ee6\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_directionId_idx_ed5c7ee6\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_lineId_createdAt_idx_08d0d392",
+    "label": "Create index \"report_lineId_createdAt_idx_08d0d392\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_lineId_createdAt_idx_08d0d392",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_lineId_createdAt_idx_08d0d392\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_lineId_createdAt_idx_08d0d392\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_lineId_createdAt_idx_08d0d392\"",
+        "sql": "CREATE INDEX \"report_lineId_createdAt_idx_08d0d392\" ON \"public\".\"report\" (\"lineId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_lineId_createdAt_idx_08d0d392\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_lineId_createdAt_idx_08d0d392\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_lineId_idx_4b6c5a21",
+    "label": "Create index \"report_lineId_idx_4b6c5a21\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_lineId_idx_4b6c5a21",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_lineId_idx_4b6c5a21\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_lineId_idx_4b6c5a21\"",
+        "sql": "CREATE INDEX \"report_lineId_idx_4b6c5a21\" ON \"public\".\"report\" (\"lineId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_lineId_idx_4b6c5a21\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_stationId_createdAt_idx_9a45e994",
+    "label": "Create index \"report_stationId_createdAt_idx_9a45e994\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_stationId_createdAt_idx_9a45e994",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_stationId_createdAt_idx_9a45e994\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_stationId_createdAt_idx_9a45e994\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_stationId_createdAt_idx_9a45e994\"",
+        "sql": "CREATE INDEX \"report_stationId_createdAt_idx_9a45e994\" ON \"public\".\"report\" (\"stationId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_stationId_createdAt_idx_9a45e994\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_stationId_createdAt_idx_9a45e994\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.report.report_stationId_idx_0626a60c",
+    "label": "Create index \"report_stationId_idx_0626a60c\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "report_stationId_idx_0626a60c",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"report_stationId_idx_0626a60c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_stationId_idx_0626a60c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"report_stationId_idx_0626a60c\"",
+        "sql": "CREATE INDEX \"report_stationId_idx_0626a60c\" ON \"public\".\"report\" (\"stationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"report_stationId_idx_0626a60c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"report_stationId_idx_0626a60c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reportConfirmation.reportConfirmation_reportId_idx_d163019e",
+    "label": "Create index \"reportConfirmation_reportId_idx_d163019e\" on \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reportConfirmation_reportId_idx_d163019e",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reportConfirmation_reportId_idx_d163019e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_reportId_idx_d163019e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reportConfirmation_reportId_idx_d163019e\"",
+        "sql": "CREATE INDEX \"reportConfirmation_reportId_idx_d163019e\" ON \"public\".\"reportConfirmation\" (\"reportId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reportConfirmation_reportId_idx_d163019e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_reportId_idx_d163019e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reportConfirmation.reportConfirmation_reportId_type_idx_d0ae3d50",
+    "label": "Create index \"reportConfirmation_reportId_type_idx_d0ae3d50\" on \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reportConfirmation_reportId_type_idx_d0ae3d50",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reportConfirmation_reportId_type_idx_d0ae3d50\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_reportId_type_idx_d0ae3d50\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reportConfirmation_reportId_type_idx_d0ae3d50\"",
+        "sql": "CREATE INDEX \"reportConfirmation_reportId_type_idx_d0ae3d50\" ON \"public\".\"reportConfirmation\" (\"reportId\", \"type\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reportConfirmation_reportId_type_idx_d0ae3d50\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_reportId_type_idx_d0ae3d50\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reportConfirmation.reportConfirmation_userId_idx_a489d58a",
+    "label": "Create index \"reportConfirmation_userId_idx_a489d58a\" on \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reportConfirmation_userId_idx_a489d58a",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reportConfirmation_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reportConfirmation_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"reportConfirmation_userId_idx_a489d58a\" ON \"public\".\"reportConfirmation\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reportConfirmation_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reportConfirmation_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stationLine.stationLine_lineId_idx_4b6c5a21",
+    "label": "Create index \"stationLine_lineId_idx_4b6c5a21\" on \"stationLine\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stationLine_lineId_idx_4b6c5a21",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stationLine_lineId_idx_4b6c5a21\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stationLine_lineId_idx_4b6c5a21\"",
+        "sql": "CREATE INDEX \"stationLine_lineId_idx_4b6c5a21\" ON \"public\".\"stationLine\" (\"lineId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stationLine_lineId_idx_4b6c5a21\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine_lineId_idx_4b6c5a21\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stationLine.stationLine_stationId_idx_0626a60c",
+    "label": "Create index \"stationLine_stationId_idx_0626a60c\" on \"stationLine\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stationLine_stationId_idx_0626a60c",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stationLine_stationId_idx_0626a60c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine_stationId_idx_0626a60c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stationLine_stationId_idx_0626a60c\"",
+        "sql": "CREATE INDEX \"stationLine_stationId_idx_0626a60c\" ON \"public\".\"stationLine\" (\"stationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stationLine_stationId_idx_0626a60c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stationLine_stationId_idx_0626a60c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.direction.direction_lineId_fkey",
+    "label": "Add foreign key \"direction_lineId_fkey\" on \"direction\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "direction_lineId_fkey",
+        "table": "direction"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"direction_lineId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "direction_lineId_fkey",
+          "public",
+          "\"public\".\"direction\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"direction_lineId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"direction\"\nADD CONSTRAINT \"direction_lineId_fkey\"\nFOREIGN KEY (\"lineId\")\nREFERENCES \"public\".\"line\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"direction_lineId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "direction_lineId_fkey",
+          "public",
+          "\"public\".\"direction\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.refreshToken.refreshToken_userId_fkey",
+    "label": "Add foreign key \"refreshToken_userId_fkey\" on \"refreshToken\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "refreshToken_userId_fkey",
+        "table": "refreshToken"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"refreshToken_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refreshToken_userId_fkey",
+          "public",
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"refreshToken_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"refreshToken\"\nADD CONSTRAINT \"refreshToken_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"refreshToken_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refreshToken_userId_fkey",
+          "public",
+          "\"public\".\"refreshToken\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.report.report_lineId_fkey",
+    "label": "Add foreign key \"report_lineId_fkey\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "report_lineId_fkey",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"report_lineId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_lineId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"report_lineId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"report\"\nADD CONSTRAINT \"report_lineId_fkey\"\nFOREIGN KEY (\"lineId\")\nREFERENCES \"public\".\"line\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"report_lineId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_lineId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.report.report_stationId_fkey",
+    "label": "Add foreign key \"report_stationId_fkey\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "report_stationId_fkey",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"report_stationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_stationId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"report_stationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"report\"\nADD CONSTRAINT \"report_stationId_fkey\"\nFOREIGN KEY (\"stationId\")\nREFERENCES \"public\".\"station\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"report_stationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_stationId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.report.report_directionId_fkey",
+    "label": "Add foreign key \"report_directionId_fkey\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "report_directionId_fkey",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"report_directionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_directionId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"report_directionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"report\"\nADD CONSTRAINT \"report_directionId_fkey\"\nFOREIGN KEY (\"directionId\")\nREFERENCES \"public\".\"direction\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"report_directionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_directionId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.report.report_authorId_fkey",
+    "label": "Add foreign key \"report_authorId_fkey\" on \"report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "report_authorId_fkey",
+        "table": "report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"report_authorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_authorId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"report_authorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"report\"\nADD CONSTRAINT \"report_authorId_fkey\"\nFOREIGN KEY (\"authorId\")\nREFERENCES \"public\".\"user\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"report_authorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "report_authorId_fkey",
+          "public",
+          "\"public\".\"report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.reportConfirmation.reportConfirmation_reportId_fkey",
+    "label": "Add foreign key \"reportConfirmation_reportId_fkey\" on \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "reportConfirmation_reportId_fkey",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"reportConfirmation_reportId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_reportId_fkey",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"reportConfirmation_reportId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"reportConfirmation\"\nADD CONSTRAINT \"reportConfirmation_reportId_fkey\"\nFOREIGN KEY (\"reportId\")\nREFERENCES \"public\".\"report\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"reportConfirmation_reportId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_reportId_fkey",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.reportConfirmation.reportConfirmation_userId_fkey",
+    "label": "Add foreign key \"reportConfirmation_userId_fkey\" on \"reportConfirmation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "reportConfirmation_userId_fkey",
+        "table": "reportConfirmation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"reportConfirmation_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_userId_fkey",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"reportConfirmation_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"reportConfirmation\"\nADD CONSTRAINT \"reportConfirmation_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"reportConfirmation_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reportConfirmation_userId_fkey",
+          "public",
+          "\"public\".\"reportConfirmation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.stationLine.stationLine_lineId_fkey",
+    "label": "Add foreign key \"stationLine_lineId_fkey\" on \"stationLine\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "stationLine_lineId_fkey",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"stationLine_lineId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_fkey",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"stationLine_lineId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"stationLine\"\nADD CONSTRAINT \"stationLine_lineId_fkey\"\nFOREIGN KEY (\"lineId\")\nREFERENCES \"public\".\"line\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"stationLine_lineId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_lineId_fkey",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.stationLine.stationLine_stationId_fkey",
+    "label": "Add foreign key \"stationLine_stationId_fkey\" on \"stationLine\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "stationLine_stationId_fkey",
+        "table": "stationLine"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"stationLine_stationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_stationId_fkey",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"stationLine_stationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"stationLine\"\nADD CONSTRAINT \"stationLine_stationId_fkey\"\nFOREIGN KEY (\"stationId\")\nREFERENCES \"public\".\"station\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"stationLine_stationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stationLine_stationId_fkey",
+          "public",
+          "\"public\".\"stationLine\""
+        ]
+      }
+    ]
+  }
+]
