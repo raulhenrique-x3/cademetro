@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cademetro-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cademetro
+      POSTGRES_PASSWORD: cademetro
+      POSTGRES_DB: cademetro
+    ports:
+      - "5434:5432"
+    volumes:
+      - cademetro_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cademetro -d cademetro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile
+    container_name: cademetro-api
+    restart: unless-stopped
+    environment:
+      PORT: 8006
+      DATABASE_URL: postgresql://cademetro:cademetro@db:5432/cademetro
+      JWT_SECRET: dev-jwt-secret-cademetro-2026
+      CORS_ORIGIN: "*"
+    ports:
+      - "8006:8006"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  cademetro_pg_data:
