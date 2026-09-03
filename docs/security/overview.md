@@ -8,12 +8,12 @@
   revocation) adds complexity with no MVP benefit — sessions are short and reads are public. Revisit
   only if token lifetime becomes a real problem.
 - Password hashing with **bcryptjs** (cost factor default 10-12). `passwordHash` is never returned
-  (`@Exclude()` + `ClassSerializerInterceptor`).
+  (omitted from response DTOs).
 - Auth guard verifies signature + expiry + user `status` (`ACTIVE` required to act).
 
 ## Password policy
 
-- Register/login: `password` min 8 chars (class-validator `@MinLength(8)`). No forced complexity in
+- Register/login: `password` min 8 chars (joi `.min(8)`). No forced complexity in
   the MVP (keep friction low); hash cost provides the main protection.
 
 ## Token storage (frontend)
@@ -23,8 +23,8 @@
 
 ## Rate limiting
 
-Use **`@nestjs/throttler`** (required by the requirements). It supersedes the installed
-`express-rate-limit` for the MVP.
+Use the installed **`express-rate-limit`** (Express middleware). Apply a global default in `main.ts`
+and per-route instances for the sensitive endpoints below.
 
 | Route | Limit |
 |-------|-------|
@@ -34,14 +34,13 @@ Use **`@nestjs/throttler`** (required by the requirements). It supersedes the in
 | `POST /auth/register` | 10 per hour per IP (anti-account-farming). |
 | Public reads (`GET /status`, `GET /reports/recent`) | generous global default (e.g. 120/min) to avoid burst abuse. |
 
-Apply globally via `ThrottlerGuard`; tighten per-route with `@Throttle()` on report creation and
-login.
+Apply a global default via `app.use(rateLimit(...))`; tighten per-route with dedicated rate-limit
+instances on report creation and login.
 
 ## Input validation
 
-- `ValidationPipe` with `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are
-  rejected, not silently dropped.
-- All request DTOs validated by class-validator. Per-type report scope rules enforced in
+- A global joi validation pipe rejects unknown fields instead of silently dropping them.
+- All request DTOs validated by joi schemas. Per-type report scope rules enforced in
   `ReportsService`.
 - Frontend mirrors validation with Zod (`src/api/schemas.ts`).
 

@@ -21,8 +21,8 @@ REST + SSE. No microservices, no message brokers, no Redis.
 
 - **Frontend**: Expo 57 / React Native. Server state via TanStack Query + Axios. Zod for DTO
   validation. Real-time via an SSE hook that feeds the React Query cache.
-- **Backend**: NestJS 12, idiomatic `Controller → Service → Prisma`. Swagger API docs, class-validator
-  DTOs, JWT auth, throttler rate limiting.
+- **Backend**: NestJS 12, idiomatic `Controller → Service → Prisma`. Swagger API docs, joi DTO
+  validation, JWT auth, express-rate-limit rate limiting.
 - **Database**: PostgreSQL 15+, single schema `public`. Managed by Prisma Next (contract-based ORM).
 
 ## Guiding rules

@@ -18,15 +18,24 @@
 Native**. Per the actual-repo rule, the MVP frontend is Expo. The required supporting libraries
 (TanStack Query, Axios, Zod, lucide-react) are already present.
 
-## Current repo state (EXISTING scaffold)
+## Repository state (IMPLEMENTED MVP)
 
-- `src/app/_layout.tsx` — root layout with `ThemeProvider` + `AnimatedSplashOverlay` + `AppTabs`.
-- `src/app/index.tsx` — Home tab (Expo welcome placeholder).
-- `src/app/explore.tsx` — Explore tab (starter demo).
-- `src/components/` — themed primitives (`themed-text`, `themed-view`), `app-tabs`, `animated-icon`,
-  `hint-row`, `web-badge`, `external-link`, `ui/collapsible`.
-- `src/constants/theme.ts` — `Colors` (light/dark), `Fonts`, `Spacing`, `MaxContentWidth`.
-- `src/hooks/` — `use-theme`, `use-color-scheme`.
+- `src/app/_layout.tsx` — root layout with `QueryClientProvider`, `ThemeContextProvider`, `AuthProvider`, and `AppTabs`.
+- `src/app/index.tsx` — Home screen with current line status cards, quick report button, and live activity feed.
+- `src/app/explore.tsx` — Network explorer with line filter chips and searchable station list.
+- `src/app/line/[id].tsx` — Line detail with status, ordered station track, and scoped reports.
+- `src/app/station/[id].tsx` — Station detail with served lines, operational status, and scoped reports.
+- `src/app/report.tsx` — Rapid 3-step report composer (Station → Direction → Type).
+- `src/app/login.tsx` / `register.tsx` — Auth forms with Zod validation.
+- `src/app/profile.tsx` — User profile, trust score display, and light/dark theme switcher.
+- `src/app/admin/reports.tsx` — Moderation screen for soft-hiding reports.
+- `src/components/ui/` — generic reusable UI primitives (`button`, `badge`, `card`, `input`, `skeleton`, `separator`, `empty-state`, `error-state`).
+- `src/components/layout/` — `header` (live indicator + theme toggle), `screen-shell` (mobile-first responsive wrapper).
+- `src/constants/theme.ts` & `metro.ts` — Semantic color tokens, typography, spacing, status mappings.
+- `src/context/theme-context.tsx` — Theme mode state and persistence.
+- `src/features/` — domain hooks and feature components (`auth`, `metro`, `reports`, `status`).
+- `src/api/` — typed Axios client, schemas, and endpoint modules.
+- `src/hooks/use-realtime.ts` — SSE subscription updating React Query cache in real time.
 
 ## Planned architecture
 

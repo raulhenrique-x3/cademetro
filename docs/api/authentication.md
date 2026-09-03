@@ -1,11 +1,10 @@
 # API: Authentication
 
-JWT-based. **No refresh tokens** in the MVP (see `security/overview.md` for rationale). Access token
-expiry is short (default **1 hour**, constant `JWT_EXPIRES_IN`).
+JWT-based with access token and refresh token rotation. Access token expiry default: 2 hours, refresh token TTL: 30 days.
 
 ## `POST /auth/register`
 
-Public. Creates an account and returns a token.
+Public. Creates an account.
 
 Request body:
 ```json
@@ -20,24 +19,25 @@ Request body:
 - `password` — min 8 chars.
 - `username`, `name` — optional.
 
-Validation rules (class-validator): `email` is `@IsEmail()`, `password` is
-`@MinLength(8)` / `@IsString()`, `username`/`name` optional strings.
+Validation rules: `email` is email format, `password` min 8 chars, `username`/`name` optional strings.
 
 Responses:
-- `201` → `AuthResponse`
+- `201` → `RegisterResponseDto`
 - `400` — validation failed.
-- `409` — email already registered. (`409 Conflict` is added to the error map for this case.)
+- `409` — email already registered.
 
 ```json
 {
-  "accessToken": "<jwt>",
-  "user": { "id": 1, "email": "user@example.com", "username": "metro_user", "name": "Metro User", "role": "USER", "status": "ACTIVE", "trustScore": 0.5, "createdAt": "..." }
+  "id": 1,
+  "message": "Account created successfully"
 }
 ```
 
+Clients automatically sign in with credentials after registration or direct to login.
+
 ## `POST /auth/login`
 
-Public. Returns a token for a valid credential pair.
+Public. Authenticates with credentials and returns tokens.
 
 Request body:
 ```json
@@ -45,10 +45,43 @@ Request body:
 ```
 
 Responses:
-- `200` → `AuthResponse` (same shape as register).
+- `200` → `TokenResponseDto`
 - `400` — validation failed.
 - `401` — invalid credentials.
 - `403` — account `SUSPENDED`.
+
+```json
+{
+  "accessToken": "<jwt>",
+  "refreshToken": "<rawToken>"
+}
+```
+
+## `POST /auth/refresh`
+
+Rotates an existing refresh token for a new token pair.
+
+Request body:
+```json
+{ "refreshToken": "<rawToken>" }
+```
+
+Responses:
+- `200` → `TokenResponseDto`
+- `401` — invalid or expired refresh token.
+- `403` — account `SUSPENDED`.
+
+## `POST /auth/logout`
+
+Revokes the provided refresh token.
+
+Request body:
+```json
+{ "refreshToken": "<rawToken>" }
+```
+
+Responses:
+- `200` → `{ "message": "Logged out successfully" }`
 
 ## `GET /auth/me`
 
@@ -80,7 +113,7 @@ register/login ──► verify/issue ──► accessToken (JWT)
   `SUSPENDED`. The repo already has `@nestjs/passport` + `passport-http-bearer`; use them **only if
   they add value** — the MVP can use a lightweight custom guard with `@nestjs/jwt` and avoid extra
   Passport strategies. Decide during Phase 3.
-- `passwordHash` is excluded from all serialization (`@Exclude()` + `ClassSerializerInterceptor`).
+- `passwordHash` is omitted from response DTOs (never serialized).
 - Email is lowercased and trimmed before persistence/compare.
 
 ## Errors

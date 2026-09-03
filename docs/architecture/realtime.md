@@ -35,7 +35,7 @@ User A                          NestJS                              User B / Use
 
 ## Components (backend)
 
-- **`EventsModule`** (`src/events/`):
+- **`EventsModule`** (`src/modules/events/`):
   - `EventsService`: an RxJS `Subject<MetroEvent>` (in-memory). Methods: `publish(event)`,
     `subscribe()` returning an `Observable`.
   - `EventsController`: `@Sse('events')` handler that maps each client to a filtered observable

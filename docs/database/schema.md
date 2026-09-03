@@ -1,12 +1,16 @@
 # Database Schema
 
 PostgreSQL 15+. Managed by **Prisma Next** (contract-based). The authoritative source of truth is
-`back-end/src/prisma/contract.prisma`. Workflow:
+`back-end/src/infra/database/prisma/contract.prisma`. Workflow:
 
 ```bash
 npx prisma contract emit     # regenerate contract.json + contract.d.ts
 npx prisma db init           # create tables
 ```
+
+**Local setup:** the app's PostgreSQL runs in Docker (`docker compose up db`), exposed on host port
+**5434**. `back-end/.env`'s `DATABASE_URL` points to `localhost:5434` when run from the host, and to
+the `db` service (port `5432`) from inside the `api` container. See `architecture/backend.md`.
 
 **Naming:** Prisma Next maps model fields to columns preserving the field name as written in the
 contract (camelCase), and table names to lowercase model names (see the generated `contract.d.ts`

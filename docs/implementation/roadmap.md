@@ -18,29 +18,35 @@ Phase 10 — MVP hardening
 
 ## Phase 1 — Foundation
 
-- Establish module structure (`src/<feature>/`), global pipes/filters/interceptors in `main.ts`.
-- Add missing deps: `@nestjs/jwt`, `bcryptjs`, `class-validator`, `class-transformer`,
-  `@nestjs/throttler`.
-- Wire Swagger at `/docs`; global error filter + uniform error shape; CORS; helmet.
+- Establish module structure (`src/modules/<feature>/`), global pipes/filters/interceptors in `main.ts`.
+- Add missing deps: `@nestjs/jwt`, `bcryptjs`.
+- Docker Compose dev environment: PostgreSQL ≥ 15 container exposed on host port **5434** + the
+  backend as a container; `docker compose up` boots both (DB only via `docker compose up db`).
+- Wire Swagger at `/docs`; global error filter + uniform error shape; CORS; helmet; rate limiting
+  via the installed `express-rate-limit`.
 - **Dependencies**: none (starts from existing scaffold).
-- **Affected**: `main.ts`, `app.module.ts`, new `src/common/`.
-- **Acceptance**: app boots; Swagger serves; unknown-field payloads → 400; no internal error leak.
+- **Affected**: `main.ts`, `app.module.ts`, new `src/shared/`, `docker-compose.yml`, `back-end/Dockerfile`.
+- **Acceptance**: app boots; Swagger serves; unknown-field payloads → 400; no internal error leak;
+  Postgres and backend run via Docker Compose (DB on host port 5434).
 
 ## Phase 2 — Database / domain model
 
 - Replace demo `User`/`Post` contract with the domain model (`database/schema.md`).
-- Run `npx prisma contract emit` then `npx prisma db init`.
+- Run `npx prisma contract emit` then `npx prisma db init` (against the Dockerized PostgreSQL from
+  Phase 1).
 - Add seed script (minimal network: one line, two directions, stations).
+- `MetroModule` read-only endpoints (`GET /lines`, `/lines/:id`, `/stations`, `/stations/:id`).
 - **Dependencies**: Phase 1.
-- **Affected**: `src/prisma/contract.prisma` (+ generated files), `prisma` seed.
-- **Acceptance**: tables/enums created; seed data queryable via `db.orm.public.*`; indexes present.
+- **Affected**: `src/infra/database/prisma/contract.prisma` (+ generated files), seed (`src/infra/database/prisma/seed.ts`), `src/modules/metro/`.
+- **Acceptance**: tables/enums created; seed data queryable via `db.orm.public.*`; indexes present;
+  metro endpoints return the seeded network per `api/stations.md`.
 
 ## Phase 3 — Authentication
 
-- `AuthModule`: register, login, `GET /auth/me`; bcrypt hash; JWT issue + guard; `@Exclude()`
-  passwordHash; login throttling.
+- `AuthModule`: register, login, `GET /auth/me`; bcrypt hash; JWT issue + guard; `passwordHash`
+  omitted from responses; login rate limit.
 - **Dependencies**: Phase 1.
-- **Affected**: `src/auth/`.
+- **Affected**: `src/modules/auth/`.
 - **Acceptance**: register/login returns token; protected route rejects bad/expired token; duplicate
   email → 409.
 
@@ -49,7 +55,7 @@ Phase 10 — MVP hardening
 - `ReportsModule`: `POST /reports`, `GET /reports/recent`, `GET /reports/:id`; per-type scope
   validation; report creation throttling.
 - **Dependencies**: Phases 2, 3.
-- **Affected**: `src/reports/`.
+- **Affected**: `src/modules/reports/`.
 - **Acceptance**: valid report stored with correct FKs; invalid scope rejected (400); recent list
   ordered newest-first.
 
@@ -58,7 +64,7 @@ Phase 10 — MVP hardening
 - `StatusModule` + `ReliabilityService`: derive line/station status (`api/status.md`) and confidence
   (`domain/reliability.md`); wire into report responses and status endpoints.
 - **Dependencies**: Phases 2, 4.
-- **Affected**: `src/status/`, `src/reports/` (response DTOs).
+- **Affected**: `src/infra/http/status/`, `src/modules/reports/` (response DTOs).
 - **Acceptance**: `GET /status` returns correct derived status per the priority rules; confidence
   follows the documented formula; unit tests pass.
 
@@ -67,7 +73,7 @@ Phase 10 — MVP hardening
 - Confirm/dispute endpoints (`POST /reports/:id/confirm|dispute`); unique `(reportId, userId)`;
   toggle semantics; own-report rule; counts + confidence update.
 - **Dependencies**: Phases 2–5.
-- **Affected**: `src/reports/`.
+- **Affected**: `src/modules/reports/`.
 - **Acceptance**: one action per user per report; own report → 403; counts/confidence update.
 
 ## Phase 7 — SSE / realtime
@@ -76,7 +82,7 @@ Phase 10 — MVP hardening
   `stationId` filtering + heartbeat; publish `report.created` / `report.confirmed` /
   `report.disputed` / `status.updated` from service mutations.
 - **Dependencies**: Phases 4–6.
-- **Affected**: `src/events/`, `src/reports/`, `src/status/`.
+- **Affected**: `src/modules/events/`, `src/modules/reports/`, `src/infra/http/status/`.
 - **Acceptance**: SSE client receives events on report create/confirm/dispute; filters work;
   heartbeat emitted; reconnect handled by client snapshot-refetch.
 

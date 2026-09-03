@@ -41,7 +41,7 @@ All errors use one envelope. The backend must **not** leak internal details.
 | 429 | Too Many Requests | Rate limit exceeded | Report creation, login throttling. |
 | 500 | Internal Server Error | Unexpected | Server fault; generic message only. |
 
-Implementation: a global exception filter maps `ValidationPipe` errors, custom domain exceptions, and
+Implementation: a global exception filter maps joi validation errors, custom domain exceptions, and
 unknown errors to this shape. See `security/overview.md` and `testing/strategy.md`.
 
 ## Endpoint map
@@ -67,7 +67,7 @@ unknown errors to this shape. See `security/overview.md` and `testing/strategy.m
 
 ## Conventions
 
-- Request bodies are DTO classes validated by `ValidationPipe` (whitelist + forbidNonWhitelisted).
+- Request bodies are validated by joi schemas (unknown fields rejected).
 - Timestamps are ISO-8601 strings.
 - Enum values are the PascalCase strings defined in `database/schema.md`.
 - Pagination (for `GET /reports/recent`) uses `limit` (default 20, max 100).

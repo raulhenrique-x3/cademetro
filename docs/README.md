@@ -8,12 +8,12 @@ project.
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Backend | `EXISTING` (scaffold) | NestJS 12, TypeScript ESM, Vitest, oxlint, Swagger, Prisma Next ORM. Only demo `Hello World` + demo `User`/`Post` contract. |
-| Frontend | `EXISTING` (scaffold) | **Expo 57 / React Native / expo-router**, react-native-web, TanStack Query, Axios, Zod, lucide-react, react-hook-form, maplibre-gl. Tab layout only (Home/Explore). |
-| Domain model | `MISSING` | No metro domain entities exist. Demo `User`/`Post` must be replaced. |
-| Authentication | `MISSING` | No JWT, no password hashing, no auth guard. |
-| Reports / Status / SSE | `MISSING` | None implemented. |
-| Tests | `EXISTING` (skeleton) | Vitest spec + e2e skeleton only. |
+| Backend | `IMPLEMENTED` | NestJS 12, TypeScript ESM, Vitest, Swagger, Prisma Next ORM. Auth, Metro, Reports, Status, SSE modules all implemented. Dockerized on port 8006 (PostgreSQL on 5434). |
+| Frontend | `IMPLEMENTED` (MVP) | **Expo 57 / React Native 0.86 / expo-router**, react-native-web, TanStack Query, Axios, Zod. Full MVP routes (Home, Explore, Line, Station, Report modal, Login, Register, Profile, Moderation), dark/light mode, SSE realtime updates, Vitest test suite. |
+| Domain model | `IMPLEMENTED` | Full metro network (lines, stations, directions) + reports + confirmations + reliability confidence. |
+| Authentication | `IMPLEMENTED` | JWT access tokens + refresh tokens, bcryptjs, user trust score, login/register/logout/me. |
+| Reports / Status / SSE | `IMPLEMENTED` | Derived operational status, realtime SSE broadcast (`/events`), report creation & toggle confirmations. |
+| Tests | `IMPLEMENTED` | Vitest suites passing for both backend and frontend. |
 
 Legend used across docs: **EXISTING** = already in repo · **PLANNED** = designed here, to build · **MISSING** = absent.
 
@@ -25,7 +25,7 @@ Legend used across docs: **EXISTING** = already in repo · **PLANNED** = designe
    Expo**. The supporting libraries named in the requirements (TanStack Query, Axios, Zod,
    lucide-react) are all already present in the Expo app. See `architecture/frontend.md`.
 2. **Prisma is "Prisma Next" (contract-based), not classic Prisma schema.** The backend uses
-   `@prisma/orm-postgres@8.0.0-rc.8` with `src/prisma/contract.prisma` + generated `contract.json` /
+   `@prisma/orm-postgres@8.0.0-rc.8` with `src/infra/database/prisma/contract.prisma` + generated `contract.json` /
    `contract.d.ts`, queried via `db.orm.public.<Model>`. There is **no `schema.prisma`** and **no
    generated Prisma Client**. All database work uses the contract workflow:
    `npx prisma contract emit` then `npx prisma db init`. See `database/schema.md`.
@@ -37,6 +37,8 @@ Legend used across docs: **EXISTING** = already in repo · **PLANNED** = designe
    for the MVP. See `api/authentication.md` and `security/overview.md`.
 6. **SSE, not WebSockets.** Real-time via `GET /events` (Server-Sent Events). Single-process
    in-memory RxJS `Subject` as event bus — no Redis/message broker. See `architecture/realtime.md`.
+7. **Backend and PostgreSQL run in Docker.** `docker compose up` starts both; the Postgres container
+   is exposed on host port **5434**. See `architecture/backend.md` and `implementation/roadmap.md`.
 
 ## Document index
 
