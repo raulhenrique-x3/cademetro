@@ -1,114 +1,113 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# CadêMetrô — Back-End (MVP)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend REST API e streaming em tempo real (SSE) para a rede colaborativa de passageiros do Metrô de Recife.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Construído com **NestJS 12**, **Prisma Next** (`@prisma/orm-postgres`), **PostgreSQL 16**, **RxJS** para streaming de eventos e **Vitest** para testes.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Funcionalidades do MVP
 
-## Project setup
+- **Metro Infrastructure (`MetroModule`)**:
+  - `GET /lines`: Lista linhas e direções (Linha 1–Azul, 2–Verde, 3–Vermelha, 4–Amarela).
+  - `GET /lines/:id`: Detalhes da linha com estações ordenadas.
+  - `GET /stations`: Lista de estações com coordenadas geográficas e linhas associadas.
+  - `GET /stations/:id`: Detalhes de uma estação.
+- **Autenticação & Contas (`AuthModule`)**:
+  - `POST /auth/register`: Cadastro com e-mail, senha (mínimo 8 caracteres) e perfil.
+  - `POST /auth/login`: Autenticação e emissão de JWT (acesso de 1 hora).
+  - `GET /auth/me`: Perfil do usuário autenticado com `trustScore` calculado dinamicamente.
+- **Relatos Colaborativos (`ReportsModule`)**:
+  - `POST /reports`: Criação de relatos operacionais (`TRAIN_*`, `OPERATIONAL_RESTRICTION`, `SERVICE_INTERRUPTION`, `NORMAL_OPERATION`) com validação estrita de escopo por tipo.
+  - `GET /reports/recent`: Consulta paginada dos relatos mais recentes (ordenação decrescente por data, filtros por linha/estação/direção).
+  - `GET /reports/:id`: Detalhe do relato com contadores de confirmação/contestação e confiabilidade calculada.
+  - `POST /reports/:id/confirm`: Confirmação de relato (com semântica de toggle e proibição de auto-confirmação).
+  - `POST /reports/:id/dispute`: Contestação de relato (com semântica de toggle e proibição de auto-contestação).
+  - `PATCH /reports/:id/hide`: Moderação (soft-hide) de relatos (restrito a `MODERATOR` / `ADMIN`).
+- **Status Operacional Derivado (`StatusModule` & `ReliabilityService`)**:
+  - `GET /status`: Status operacional derivado por linha (janela de 30 minutos, regra de prioridade do relato mais recente: `INTERRUPTED` > `RESTRICTED` > `NORMAL` > `UNKNOWN`).
+  - `GET /stations/:id/status`: Status operacional derivado para uma estação específica.
+  - Algoritmo determinístico de confiabilidade (`confidence = 0.40 * f_age + 0.35 * f_conf + 0.25 * f_trust`).
+- **Tempo Real via SSE (`EventsModule`)**:
+  - `GET /events`: Stream de Server-Sent Events (SSE) com heartbeat (`: ping` a cada 30s) e filtros por `lineId` e `stationId`. Eventos emitidos: `report.created`, `report.confirmed`, `report.disputed`, `status.updated`.
+- **Segurança & Hardening**:
+  - Helmet para cabeçalhos de segurança HTTP.
+  - Rate limiting via `express-rate-limit` (login: 5/min, criação de relatos: 10/min, confirmações: 30/min, global: 120/min).
+  - Validação de entrada via Joi rejeitando campos desconhecidos.
+  - Formato uniforme de erro da API.
+  - Remoção automática de dados sensíveis (`passwordHash`).
+  - Swagger/OpenAPI interativo em `/docs`.
 
-```bash
-$ npm install
-```
+---
 
-## Compile and run the project
+## Como Rodar Localmente
 
-```bash
-# development
-$ npm run start
+### Pré-requisitos
 
-# watch mode
-$ npm run start:dev
+- Node.js ≥ 22
+- Docker e Docker Compose
 
-# production mode
-$ npm run start:prod
-```
+### 1. Iniciar com Docker Compose (Banco + API)
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Na raiz do repositório:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Sobe o banco PostgreSQL 16 (porta 5434) e a API (porta 8006)
+docker compose up -d
+
+# Para subir apenas o banco de dados para desenvolvimento local:
+docker compose up -d db
+
+# Para parar os serviços:
+docker compose down
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 2. Configurar Variáveis de Ambiente
 
-## Observability
+Arquivo `back-end/.env`:
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+```env
+DATABASE_URL="postgresql://cademetro:cademetro@localhost:5434/cademetro"
+DATABASE_URL_TEST="postgresql://cademetro:cademetro@localhost:5434/cademetro_test"
+JWT_SECRET="dev-jwt-secret-cademetro-2026"
+PORT=8006
+CORS_ORIGIN="*"
+```
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+### 3. Inicializar e Popular o Banco
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+```bash
+cd back-end
 
-## Resources
+# Emitir artefatos do contrato Prisma Next
+npm run contract:emit
 
-Check out a few resources that may come in handy when working with NestJS:
+# Criar tabelas no PostgreSQL
+npx prisma db init
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Executar seed com linhas 1, 2, 3, 4 e usuários iniciais
+npm run seed
+```
 
-## Support
+### 4. Rodar o Servidor em Desenvolvimento
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run start:dev
+```
 
-## Stay in touch
+Acesse a documentação Swagger em: [http://localhost:8006/docs](http://localhost:8006/docs).
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## Testes
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# Rodar testes unitários (Vitest)
+npm test
+
+# Rodar testes ponta a ponta (E2E)
+npm run test:e2e
+
+# Verificar formatação e linter (Oxlint)
+npm run lint
+```
