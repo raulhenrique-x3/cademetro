@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { TrainFront, Sun, Moon, ArrowLeft } from 'lucide-react-native';
+import { TrainFront, ArrowLeft } from 'lucide-react-native';
 import { Spacing, Typography, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAppTheme } from '@/context/theme-context';
 import { useAuth } from '@/features/auth/auth-context';
 import { useRealtime } from '@/hooks/use-realtime';
 
@@ -15,7 +14,6 @@ export interface HeaderProps {
 
 export function Header({ title, showBack = false }: HeaderProps) {
   const theme = useTheme();
-  const { colorScheme, toggleTheme } = useAppTheme();
   const { user, isAuthenticated } = useAuth();
   const { isConnected } = useRealtime();
   const router = useRouter();
@@ -79,26 +77,8 @@ export function Header({ title, showBack = false }: HeaderProps) {
         )}
       </View>
 
-      {/* Right: Theme Toggle + User Avatar/Login */}
+      {/* Right: User Avatar */}
       <View style={styles.right}>
-        <Pressable
-          onPress={toggleTheme}
-          accessibilityLabel={`Alternar tema. Modo atual: ${colorScheme}`}
-          style={({ pressed }) => [
-            styles.iconButton,
-            {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.border,
-              opacity: pressed ? 0.7 : 1,
-            },
-          ]}>
-          {colorScheme === 'dark' ? (
-            <Sun size={17} color={theme.warning} />
-          ) : (
-            <Moon size={17} color={theme.text} />
-          )}
-        </Pressable>
-
         {isAuthenticated ? (
           <Pressable
             onPress={() => router.push('/profile')}
@@ -113,20 +93,7 @@ export function Header({ title, showBack = false }: HeaderProps) {
               {user?.name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U'}
             </Text>
           </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => router.push('/login')}
-            style={({ pressed }) => [
-              styles.loginButton,
-              {
-                backgroundColor: theme.backgroundElement,
-                borderColor: theme.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}>
-            <Text style={[styles.loginText, { color: theme.text }]}>Entrar</Text>
-          </Pressable>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -180,17 +147,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  themeEmoji: {
-    fontSize: 16,
-  },
   userButton: {
     width: 34,
     height: 34,
@@ -202,15 +158,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
-  },
-  loginButton: {
-    borderWidth: 1,
-    paddingVertical: Spacing.half,
-    paddingHorizontal: Spacing.two,
-    borderRadius: Radius.medium,
-  },
-  loginText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
   },
 });

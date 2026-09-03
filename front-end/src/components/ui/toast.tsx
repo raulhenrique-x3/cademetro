@@ -6,6 +6,7 @@ import {
   Pressable,
   Animated,
   Platform,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -153,7 +154,7 @@ function ToastSingleItem({
 }
 
 export function ToastContainer() {
-  const { toasts, hideToast } = useToast();
+  const { toasts, hideToast, clearAll } = useToast();
   const insets = useSafeAreaInsets();
 
   if (toasts.length === 0) {
@@ -167,11 +168,11 @@ export function ToastContainer() {
   const errorToasts = toasts.filter((toastItem) => toastItem.type === 'error');
   const otherToasts = toasts.filter((toastItem) => toastItem.type !== 'error');
 
-  const renderToasts = (items: ToastItem[], fromBottom: boolean) => (
+  const renderColumn = (items: ToastItem[], fromBottom: boolean) => (
     <View
       pointerEvents="box-none"
       style={[
-        styles.container,
+        styles.column,
         fromBottom ? { bottom: bottomOffset } : { top: topOffset },
       ]}>
       {items.map((toastItem) => (
@@ -185,16 +186,23 @@ export function ToastContainer() {
     </View>
   );
 
+  // Render inside a transparent native Modal so toasts stay visible above
+  // presented modal screens (e.g. login/report) on iOS and web overlays.
   return (
-    <>
-      {otherToasts.length > 0 ? renderToasts(otherToasts, false) : null}
-      {errorToasts.length > 0 ? renderToasts(errorToasts, true) : null}
-    </>
+    <Modal transparent visible animationType="none" statusBarTranslucent onRequestClose={clearAll}>
+      <View pointerEvents="box-none" style={styles.overlay}>
+        {otherToasts.length > 0 ? renderColumn(otherToasts, false) : null}
+        {errorToasts.length > 0 ? renderColumn(errorToasts, true) : null}
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
+    flex: 1,
+  },
+  column: {
     position: 'absolute',
     left: 0,
     right: 0,
