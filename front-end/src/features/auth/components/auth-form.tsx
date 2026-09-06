@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Radius, Spacing, Typography } from '@/constants/theme';
@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/context/toast-context';
 import { useAuth } from '../auth-context';
 import { loginSchema, registerSchema } from '@/api/schemas';
+import { extractErrorMessage } from '@/lib/error-parser';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
@@ -34,6 +35,7 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
     setServerError(null);
     setFormErrors({});
 
@@ -59,7 +61,8 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
         }
       } catch (err: any) {
         showError(err);
-        setServerError(err.message || 'Falha ao entrar. Verifique seus dados.');
+        const friendlyMessage = extractErrorMessage(err);
+        setServerError(friendlyMessage || 'Falha ao entrar. Verifique seus dados.');
       } finally {
         setIsSubmitting(false);
       }
@@ -85,7 +88,8 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
         }
       } catch (err: any) {
         showError(err);
-        setServerError(err.message || 'Falha ao criar conta. Tente outro e-mail.');
+        const friendlyMessage = extractErrorMessage(err);
+        setServerError(friendlyMessage || 'Falha ao criar conta. Tente outro e-mail.');
       } finally {
         setIsSubmitting(false);
       }
@@ -156,8 +160,6 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
           : 'Crie seu cadastro gratuito em poucos segundos.'}
       </Text>
 
-      {serverError && <ErrorState message={serverError} />}
-
       {mode === 'register' && (
         <>
           <Input
@@ -214,6 +216,12 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
         }
       />
 
+      {serverError && (
+        <View style={styles.errorWrapper}>
+          <ErrorState message={serverError} />
+        </View>
+      )}
+
       <Button
         size="lg"
         loading={isSubmitting}
@@ -257,6 +265,10 @@ const styles = StyleSheet.create({
     fontSize: Typography.body.fontSize,
     marginTop: Spacing.half,
     marginBottom: Spacing.three,
+  },
+  errorWrapper: {
+    marginTop: Spacing.two,
+    marginBottom: Spacing.one,
   },
   submitBtn: {
     marginTop: Spacing.two,
