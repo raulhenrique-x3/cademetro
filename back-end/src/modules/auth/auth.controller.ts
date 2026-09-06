@@ -3,11 +3,16 @@ import {
   Post,
   Get,
   Body,
+  Query,
+  Req,
+  Res,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -70,4 +75,74 @@ export class AuthController {
   async getMe(@CurrentUser() user: any): Promise<UserDto> {
     return this.authService.getMe(user);
   }
+
+  @Get('google')
+  @ApiOperation({ summary: 'Start Google OAuth sign-in (redirects to Google)' })
+  @ApiResponse({ status: 302, description: 'Redirects to Google authorization' })
+  @ApiResponse({ status: 503, description: 'Google sign-in not configured' })
+  google(@Res() res: Response): void {
+    const state = randomBytes(24).toString('hex');
+
+    res.cookie('google_oauth_state', state, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 10 * 60 * 1000,
+      path: '/auth/google',
+    });
+
+    res.redirect(this.authService.buildGoogleAuthUrl(state));
+  }
+
+  @Get('google/callback')
+  @ApiOperation({ summary: 'Google OAuth callback - exchanges code and redirects with tokens' })
+  @ApiResponse({ status: 302, description: 'Redirects to app with accessToken/refreshToken' })
+  @ApiResponse({ status: 302, description: 'Redirects to app with error param on failure' })
+  async googleCallback(
+    @Query('code') code: string | undefined,
+    @Query('state') state: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.clearCookie('google_oauth_state', { path: '/auth/google' });
+
+    const expectedState = parseCookie(req.headers.cookie, 'google_oauth_state');
+    if (!code || !state || !expectedState || !safeStateEqual(state, expectedState)) {
+      res.redirect(this.authService.buildOauthErrorUrl('invalid_state'));
+      return;
+    }
+
+    try {
+      const tokens = await this.authService.signInWithGoogle(code);
+      const params = new URLSearchParams({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
+      res.redirect(`${this.authService.oauthRedirectUrl}?${params.toString()}`);
+    } catch {
+      res.redirect(this.authService.buildOauthErrorUrl('access_denied'));
+    }
+  }
+}
+
+function parseCookie(header: string | undefined, name: string): string | null {
+  if (!header) {
+    return null;
+  }
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) {
+      return rest.join('=');
+    }
+  }
+  return null;
+}
+
+function safeStateEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
 }
