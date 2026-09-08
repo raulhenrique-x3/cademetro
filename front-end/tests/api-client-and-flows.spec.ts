@@ -68,6 +68,28 @@ describe('API Client, Error Normalization & Backend Integration', () => {
       const normalized = normalizeError(error);
       expect(normalized.message).toBe('Validation failed: email is invalid');
     });
+
+    it('normalizes network disconnect when response is undefined', () => {
+      const error = {
+        code: 'ERR_NETWORK',
+        message: 'Network Error',
+      } as AxiosError<any>;
+
+      const normalized = normalizeError(error);
+      expect(normalized.statusCode).toBe(0);
+      expect(normalized.message).toContain('Não foi possível conectar ao servidor');
+    });
+
+    it('normalizes request timeout', () => {
+      const error = {
+        code: 'ECONNABORTED',
+        message: 'timeout of 10000ms exceeded',
+      } as AxiosError<any>;
+
+      const normalized = normalizeError(error);
+      expect(normalized.statusCode).toBe(408);
+      expect(normalized.message).toContain('Tempo de conexão esgotado');
+    });
   });
 
   describe('Live Backend Integration (port 8006)', () => {
@@ -127,6 +149,23 @@ describe('API Client, Error Normalization & Backend Integration', () => {
       const me = await authApi.getMe();
       expect(me.email).toBe(testEmail);
       expect(me.trustScore).toBeDefined();
+
+      // Delete account (LGPD & Google Play account deletion compliance)
+      const deleteRes = await authApi.deleteAccount();
+      expect(deleteRes.message).toContain('sucesso');
+    });
+
+    it('rejects invalid credentials with 401 error response', async () => {
+      try {
+        await authApi.login({
+          email: 'nonexistent@cademetro.com',
+          password: 'WrongPassword123!',
+        });
+        expect.unreachable('Should have thrown 401 error');
+      } catch (err: any) {
+        expect(err.statusCode).toBe(401);
+        expect(err.message).toBe('Invalid credentials');
+      }
     });
   });
 });

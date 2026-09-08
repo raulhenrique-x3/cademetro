@@ -1,0 +1,201 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1024 1024"
+  width="1024"
+  height="1024"
+  fill="none"
+>
+  <defs>
+    <linearGradient
+      id="green"
+      x1="220"
+      y1="180"
+      x2="820"
+      y2="850"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#25E6A4"/>
+      <stop offset="1" stop-color="#00C98B"/>
+    </linearGradient>
+
+    <linearGradient
+      id="glass"
+      x1="420"
+      y1="350"
+      x2="610"
+      y2="480"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#06101B"/>
+      <stop offset="1" stop-color="#20384B"/>
+    </linearGradient>
+
+    <linearGradient
+      id="reflection"
+      x1="560"
+      y1="360"
+      x2="650"
+      y2="450"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#9FB7C7" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#9FB7C7" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#9FB7C7" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="windowClip">
+      <rect
+        x="385"
+        y="353"
+        width="254"
+        height="135"
+        rx="35"
+      />
+    </clipPath>
+  </defs>
+
+  <!-- ================================================= -->
+  <!-- LOCATION PIN -->
+  <!-- ================================================= -->
+
+  <!-- Pin externo -->
+  <path
+    d="
+      M512 108
+      C346.7 108 212 242.7 212 408
+      C212 527.5 281.2 626.4 384.8 716.7
+      L512 838
+      L639.2 716.7
+      C742.8 626.4 812 527.5 812 408
+      C812 242.7 677.3 108 512 108
+      Z
+
+      M512 177
+      C639.1 177 742 280.2 742 408
+      C742 502.5 686.9 583.4 598.2 661.4
+      L512 741
+      L425.8 661.4
+      C337.1 583.4 282 502.5 282 408
+      C282 280.2 384.9 177 512 177
+      Z
+    "
+    fill="url(#green)"
+    fill-rule="evenodd"
+  />
+
+  <!-- ================================================= -->
+  <!-- TREM -->
+  <!-- ================================================= -->
+
+  <!-- Corpo principal -->
+  <path
+    d="
+      M512 282
+      C437 282 382 310 372 367
+      L352 559
+      C347 608 384 646 432 646
+      H592
+      C640 646 677 608 672 559
+      L652 367
+      C642 310 587 282 512 282
+      Z
+    "
+    fill="#F7F8FA"
+  />
+
+  <!-- Teto / visor superior -->
+  <rect
+    x="457"
+    y="303"
+    width="110"
+    height="36"
+    rx="18"
+    fill="#06101B"
+  />
+
+  <!-- ================================================= -->
+  <!-- JANELA -->
+  <!-- ================================================= -->
+
+  <rect
+    x="385"
+    y="353"
+    width="254"
+    height="135"
+    rx="35"
+    fill="url(#glass)"
+  />
+
+  <!-- Reflexo -->
+  <g clip-path="url(#windowClip)">
+    <path
+      d="
+        M548 335
+        H650
+        L512 510
+        H445
+        Z
+      "
+      fill="url(#reflection)"
+    />
+  </g>
+
+  <!-- ================================================= -->
+  <!-- FARÓIS -->
+  <!-- ================================================= -->
+
+  <circle
+    cx="422"
+    cy="561"
+    r="27"
+    fill="#06101B"
+  />
+
+  <circle
+    cx="602"
+    cy="561"
+    r="27"
+    fill="#06101B"
+  />
+
+  <!-- ================================================= -->
+  <!-- TRILHOS -->
+  <!-- ================================================= -->
+
+  <!-- Trilho esquerdo -->
+  <path
+    d="
+      M425 646
+      L373 728
+      H419
+      L466 646
+      Z
+    "
+    fill="#F7F8FA"
+  />
+
+  <!-- Trilho direito -->
+  <path
+    d="
+      M599 646
+      L651 728
+      H605
+      L558 646
+      Z
+    "
+    fill="#F7F8FA"
+  />
+
+  <!-- Travessa -->
+  <path
+    d="
+      M407 681
+      H617
+      L605 706
+      H419
+      Z
+    "
+    fill="#F7F8FA"
+  />
+
+</svg>

@@ -83,6 +83,25 @@ Request body:
 Responses:
 - `200` → `{ "message": "Logged out successfully" }`
 
+## `GET /auth/google`
+
+Public. Inicia o login com Google. Redireciona (302) para a tela de autorização do Google.
+
+- Redireciona para `https://accounts.google.com/o/oauth2/v2/auth` com `client_id`, `redirect_uri`,
+  `scope=openid email profile` e um `state` aleatório (armazenado em cookie HttpOnly).
+- `503` — Google sign-in não configurado (`GOOGLE_CLIENT_ID`/`GOOGLE_CALLBACK_URL` ausentes).
+
+## `GET /auth/google/callback`
+
+Public. Callback OAuth (redirect URI configurada no console do Google).
+
+- Valida o `state` (cookie) e troca o `code` por tokens com o Google.
+- Faz upsert do usuário por `googleId`; se não existir, vincula por e-mail verificado ou cria conta
+  nova (sem senha).
+- Sucesso: redireciona (302) para `OAUTH_REDIRECT_URL?accessToken=...&refreshToken=...`.
+- Falha: redireciona para `OAUTH_REDIRECT_URL?error=<motivo>`.
+- Conta criada via Google não permite login por senha (`passwordHash` nulo → `401` no `POST /auth/login`).
+
 ## `GET /auth/me`
 
 Bearer token. Returns the current user.

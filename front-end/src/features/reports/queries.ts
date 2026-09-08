@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GetRecentReportsParams, reportsApi } from '@/api/reports';
-import { CreateReportInput, HideReportInput } from '@/api/schemas';
+import { CreateReportInput } from '@/api/schemas';
 import { RecentReportsResponseDto, ReportDto } from '@/api/types';
 import { statusKeys } from '../status/queries';
 

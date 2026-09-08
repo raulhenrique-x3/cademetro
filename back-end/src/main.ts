@@ -11,21 +11,37 @@ async function bootstrap() {
   // });
   const app = await NestFactory.create(AppModule);
 
+  // Trust proxy for reverse proxies (ngrok, Docker, Cloudflare)
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Security Headers
   app.use(helmet());
 
   // CORS
+  const configuredOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? '*',
+    origin:
+      configuredOrigin && configuredOrigin !== '*'
+        ? configuredOrigin.split(',').map((o) => o.trim())
+        : (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+            // Allow all origins with credentials support (reflects request origin)
+            callback(null, true);
+          },
     credentials: true,
   });
 
   // Rate Limiting
-  // 1. Global default: 120 requests/minute
+  // 1. Global default: 300 requests/minute (configurable via RATE_LIMIT_GLOBAL_MAX; skips streaming /events and docs)
+  const globalRateLimit = Number(process.env.RATE_LIMIT_GLOBAL_MAX) || 300;
   app.use(
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 120,
+      limit: globalRateLimit,
+      skip: (req) =>
+        req.path === '/events' ||
+        req.path.startsWith('/events') ||
+        req.path === '/docs' ||
+        req.path.startsWith('/docs'),
       standardHeaders: true,
       legacyHeaders: false,
       message: {
@@ -37,12 +53,13 @@ async function bootstrap() {
     }),
   );
 
-  // 2. Login rate limit: 5 / minute
+  // 2. Login rate limit: 15 / minute (configurable via RATE_LIMIT_LOGIN_MAX)
+  const loginRateLimit = Number(process.env.RATE_LIMIT_LOGIN_MAX) || 15;
   app.use(
     '/auth/login',
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 5,
+      limit: loginRateLimit,
       standardHeaders: true,
       legacyHeaders: false,
       message: {

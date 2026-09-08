@@ -28,6 +28,10 @@ services:
       DATABASE_URL: postgresql://cademetro:cademetro@db:5432/cademetro
       JWT_SECRET: dev-jwt-secret-cademetro-2026
       CORS_ORIGIN: "*"
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_CALLBACK_URL: ""
+      OAUTH_REDIRECT_URL: "cademetro://auth/callback"
     ports:
       - "8006:8006"
     depends_on:

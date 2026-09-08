@@ -72,21 +72,21 @@ function ToastSingleItem({
           icon: <CircleAlert size={20} color={theme.destructive} />,
           borderColor: theme.destructive,
           accentColor: theme.destructive,
-          bgColor: theme.statusInterruptedBg || theme.card,
+          bgColor: theme.statusInterruptedBg,
         };
       case 'success':
         return {
           icon: <CheckCircle2 size={20} color={theme.statusNormal} />,
           borderColor: theme.statusNormal,
           accentColor: theme.statusNormal,
-          bgColor: theme.statusNormalBg || theme.card,
+          bgColor: theme.statusNormalBg,
         };
       case 'warning':
         return {
           icon: <AlertTriangle size={20} color={theme.statusRestricted} />,
           borderColor: theme.statusRestricted,
           accentColor: theme.statusRestricted,
-          bgColor: theme.statusRestrictedBg || theme.card,
+          bgColor: theme.statusRestrictedBg,
         };
       case 'info':
       default:
@@ -162,37 +162,20 @@ export function ToastContainer() {
   }
 
   const topOffset = Math.max(insets.top, 12) + Spacing.two;
-  const bottomOffset = Math.max(insets.bottom, 12) + Spacing.two;
 
-  // Errors dock at the bottom of the screen; other types stay at the top.
-  const errorToasts = toasts.filter((toastItem) => toastItem.type === 'error');
-  const otherToasts = toasts.filter((toastItem) => toastItem.type !== 'error');
-
-  const renderColumn = (items: ToastItem[], fromBottom: boolean) => (
-    <View
-      pointerEvents="box-none"
-      style={[
-        styles.column,
-        fromBottom ? { bottom: bottomOffset } : { top: topOffset },
-      ]}>
-      {items.map((toastItem) => (
-        <ToastSingleItem
-          key={toastItem.id}
-          item={toastItem}
-          onDismiss={hideToast}
-          fromBottom={fromBottom}
-        />
-      ))}
-    </View>
-  );
-
-  // Render inside a transparent native Modal so toasts stay visible above
-  // presented modal screens (e.g. login/report) on iOS and web overlays.
   return (
     <Modal transparent visible animationType="none" statusBarTranslucent onRequestClose={clearAll}>
       <View pointerEvents="box-none" style={styles.overlay}>
-        {otherToasts.length > 0 ? renderColumn(otherToasts, false) : null}
-        {errorToasts.length > 0 ? renderColumn(errorToasts, true) : null}
+        <View pointerEvents="box-none" style={[styles.column, { top: topOffset }]}>
+          {toasts.map((toastItem) => (
+            <ToastSingleItem
+              key={toastItem.id}
+              item={toastItem}
+              onDismiss={hideToast}
+              fromBottom={false}
+            />
+          ))}
+        </View>
       </View>
     </Modal>
   );

@@ -1052,6 +1052,13 @@
                   "kind": "scalar"
                 }
               },
+              "googleId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1067,7 +1074,7 @@
                 }
               },
               "passwordHash": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1168,6 +1175,9 @@
                 },
                 "email": {
                   "column": "email"
+                },
+                "googleId": {
+                  "column": "googleId"
                 },
                 "id": {
                   "column": "id"
@@ -2058,6 +2068,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "googleId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -2075,7 +2090,7 @@
                 "passwordHash": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "role": {
                   "codecId": "pg/text@1",
@@ -2130,6 +2145,11 @@
                   "columns": [
                     "email"
                   ]
+                },
+                {
+                  "columns": [
+                    "googleId"
+                  ]
                 }
               ]
             }
@@ -2175,7 +2195,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "810d32aa0be1927d684cb62f2377243a88c9c39a51f0c97e7e7ef6f271c13692"
+    "storageHash": "cc3c2576c5591cd10ca0fcea222dfdee4bb060ed3c91e8158c191ed24392b8d0"
   },
   "execution": {
     "executionHash": "f086894e0a634e6cac9905ba4becc4e8e4e5c13e2d48b04046b4b8407d520786",

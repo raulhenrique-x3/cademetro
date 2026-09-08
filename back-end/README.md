@@ -16,6 +16,8 @@ Construído com **NestJS 12**, **Prisma Next** (`@prisma/orm-postgres`), **Postg
 - **Autenticação & Contas (`AuthModule`)**:
   - `POST /auth/register`: Cadastro com e-mail, senha (mínimo 8 caracteres) e perfil.
   - `POST /auth/login`: Autenticação e emissão de JWT (acesso de 1 hora).
+  - `GET /auth/google`: Início do login social com Google (redireciona para autorização).
+  - `GET /auth/google/callback`: Callback OAuth do Google (redireciona para o app com os tokens).
   - `GET /auth/me`: Perfil do usuário autenticado com `trustScore` calculado dinamicamente.
 - **Relatos Colaborativos (`ReportsModule`)**:
   - `POST /reports`: Criação de relatos operacionais (`TRAIN_*`, `OPERATIONAL_RESTRICTION`, `SERVICE_INTERRUPTION`, `NORMAL_OPERATION`) com validação estrita de escopo por tipo.
@@ -72,7 +74,18 @@ DATABASE_URL_TEST="postgresql://cademetro:cademetro@localhost:5434/cademetro_tes
 JWT_SECRET="dev-jwt-secret-cademetro-2026"
 PORT=8006
 CORS_ORIGIN="*"
+
+# Google OAuth (login social)
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_CALLBACK_URL="https://SEU_DOMINIO.ngrok-free.app/auth/google/callback"
+OAUTH_REDIRECT_URL="cademetro://auth/callback"
 ```
+
+> **Google OAuth**: a `redirect_uri` registrada no console do Google deve ser a URL pública do
+> backend + `/auth/google/callback` (ex: `https://SEU_DOMINIO.ngrok-free.app/auth/google/callback`).
+> Após o login, o backend redireciona para `OAUTH_REDIRECT_URL` com `accessToken` e `refreshToken`
+> na query string (deep link `cademetro://` por padrão).
 
 ### 3. Inicializar e Popular o Banco
 

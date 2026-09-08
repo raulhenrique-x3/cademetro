@@ -6,6 +6,7 @@ import { API_BASE_URL } from '@/api/client';
 import { LineStatusDto, ReportDto, StationStatusDto } from '@/api/types';
 import { reportKeys } from '@/features/reports/queries';
 import { statusKeys } from '@/features/status/queries';
+import { useRealtimeContext } from '@/context/realtime-context';
 
 export interface UseRealtimeOptions {
   lineId?: number;
@@ -15,35 +16,51 @@ export interface UseRealtimeOptions {
 
 export function useRealtime(options: UseRealtimeOptions = {}) {
   const { lineId, stationId, enabled = true } = options;
-  const queryClient = useQueryClient();
+  const context = useRealtimeContext();
 
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // If no specific line/station filtering is requested, use the shared root connection!
+  const isGlobal = lineId === undefined && stationId === undefined;
+
+  const queryClient = useQueryClient();
+  const [localConnected, setLocalConnected] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const eventSourceRef = useRef<any | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryDelayRef = useRef(2000);
 
   const refetchSnapshots = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: reportKeys.allReports });
     queryClient.invalidateQueries({ queryKey: statusKeys.allStatus });
   }, [queryClient]);
 
+  const scopeKey = urlKey(lineId, stationId);
+
   useEffect(() => {
-    if (!enabled) {
+    // If global, the root RealtimeProvider handles the singleton connection
+    if (isGlobal || !enabled) {
       if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+        try {
+          eventSourceRef.current.close();
+        } catch {
+          // ignore
+        }
         eventSourceRef.current = null;
       }
-      setIsConnected(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalConnected(false);
       return;
     }
 
-    // react-native-sse: XHR-based EventSource for native; browser EventSource on web
     const createEventSource = (url: string): any => {
       if (Platform.OS === 'web' && typeof globalThis.EventSource !== 'undefined') {
         return new globalThis.EventSource(url);
       }
-      return new NativeEventSource(url);
+      return new NativeEventSource(url, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
     };
 
     let url = `${API_BASE_URL}/events`;
@@ -61,36 +78,46 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
         eventSourceRef.current = es;
 
         es.addEventListener('open', () => {
-          setIsConnected(true);
-          setError(null);
-          // On reconnection, refresh snapshot to avoid missing events
+          setLocalConnected(true);
+          setLocalError(null);
+          retryDelayRef.current = 2000;
           refetchSnapshots();
         });
 
-        es.addEventListener('error', () => {
-          setIsConnected(false);
-          setError('Conexão em tempo real perdida. Tentando reconectar...');
-          es.close();
-
-          // Exponential backoff or standard reconnect
-          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, 3000);
+        es.addEventListener('ping', () => {
+          setLocalConnected(true);
+          setLocalError(null);
         });
 
-        // Listen for named SSE events sent by NestJS
-        es.addEventListener('report.created', (e: MessageEvent) => {
+        es.addEventListener('error', () => {
+          setLocalConnected(false);
+          setLocalError('Conexão em tempo real perdida. Tentando reconectar...');
           try {
-            const data: ReportDto = JSON.parse(e.data);
+            es.close();
+          } catch {
+            // ignore
+          }
+          eventSourceRef.current = null;
+
+          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+          const delay = retryDelayRef.current;
+          retryDelayRef.current = Math.min(delay * 2, 15000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect();
+          }, delay);
+        });
+
+        es.addEventListener('report.created', (e: any) => {
+          try {
+            const data: ReportDto = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
             queryClient.setQueriesData<any>(
               { queryKey: ['reports', 'recent'] },
               (old: any) => {
                 if (!old) return { reports: [data], total: 1 };
-                if (old.reports.some((r: ReportDto) => r.id === data.id)) return old;
+                if (old.reports?.some((r: ReportDto) => r.id === data.id)) return old;
                 return {
-                  reports: [data, ...old.reports],
-                  total: old.total + 1,
+                  reports: [data, ...(old.reports || [])],
+                  total: (old.total || 0) + 1,
                 };
               },
             );
@@ -100,9 +127,9 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
           }
         });
 
-        es.addEventListener('report.confirmed', (e: MessageEvent) => {
+        es.addEventListener('report.confirmed', (e: any) => {
           try {
-            const data: ReportDto = JSON.parse(e.data);
+            const data: ReportDto = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
             queryClient.setQueryData(reportKeys.detail(data.id), data);
             queryClient.setQueriesData<any>(
               { queryKey: ['reports', 'recent'] },
@@ -110,7 +137,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
                 if (!old) return old;
                 return {
                   ...old,
-                  reports: old.reports.map((r: ReportDto) => (r.id === data.id ? data : r)),
+                  reports: old.reports?.map((r: ReportDto) => (r.id === data.id ? data : r)) || [],
                 };
               },
             );
@@ -120,9 +147,9 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
           }
         });
 
-        es.addEventListener('report.disputed', (e: MessageEvent) => {
+        es.addEventListener('report.disputed', (e: any) => {
           try {
-            const data: ReportDto = JSON.parse(e.data);
+            const data: ReportDto = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
             queryClient.setQueryData(reportKeys.detail(data.id), data);
             queryClient.setQueriesData<any>(
               { queryKey: ['reports', 'recent'] },
@@ -130,7 +157,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
                 if (!old) return old;
                 return {
                   ...old,
-                  reports: old.reports.map((r: ReportDto) => (r.id === data.id ? data : r)),
+                  reports: old.reports?.map((r: ReportDto) => (r.id === data.id ? data : r)) || [],
                 };
               },
             );
@@ -140,10 +167,11 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
           }
         });
 
-        es.addEventListener('status.updated', (e: MessageEvent) => {
+        es.addEventListener('status.updated', (e: any) => {
           try {
-            const data: LineStatusDto | StationStatusDto = JSON.parse(e.data);
-            if ('lineId' in data && data.stationId === null) {
+            const data: LineStatusDto | StationStatusDto =
+              typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+            if ('lineId' in data && (data.stationId === null || data.stationId === undefined)) {
               queryClient.setQueryData(statusKeys.lineStatus(data.lineId), data);
             }
             queryClient.invalidateQueries({ queryKey: statusKeys.allStatus });
@@ -152,7 +180,7 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
           }
         });
       } catch (err: any) {
-        setError(err?.message || 'Erro ao inicializar SSE');
+        setLocalError(err?.message || 'Erro ao inicializar SSE');
       }
     };
 
@@ -163,14 +191,26 @@ export function useRealtime(options: UseRealtimeOptions = {}) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+        try {
+          eventSourceRef.current.close();
+        } catch {
+          // ignore
+        }
         eventSourceRef.current = null;
       }
-      setIsConnected(false);
+      setLocalConnected(false);
     };
-  }, [urlKey(lineId, stationId), enabled, refetchSnapshots, queryClient]);
+  }, [isGlobal, scopeKey, lineId, stationId, enabled, refetchSnapshots, queryClient]);
 
-  return { isConnected, error, refetchSnapshots };
+  if (isGlobal) {
+    return {
+      isConnected: enabled ? context.isConnected : false,
+      error: enabled ? context.error : null,
+      refetchSnapshots: context.refetchSnapshots,
+    };
+  }
+
+  return { isConnected: localConnected, error: localError, refetchSnapshots };
 }
 
 function urlKey(lineId?: number, stationId?: number): string {
