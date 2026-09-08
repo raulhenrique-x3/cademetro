@@ -180,13 +180,23 @@ function safeStateEqual(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
+const BLOCKED_REDIRECT_SCHEMES = new Set(['javascript', 'data', 'file', 'vbscript']);
+
 function isValidRedirectUrl(url: string): boolean {
-  if (url.startsWith('cademetro://')) {
-    return true;
-  }
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const scheme = parsed.protocol.replace(/:$/, '').toLowerCase();
+
+    if (scheme === 'http' || scheme === 'https') {
+      return true;
+    }
+
+    // Custom app deep-link schemes: cademetro:// (produção) e exp:// (Expo Go/dev)
+    return (
+      !BLOCKED_REDIRECT_SCHEMES.has(scheme) &&
+      /^[a-z][a-z0-9+.-]*$/.test(scheme) &&
+      (parsed.host !== '' || parsed.pathname.length > 1)
+    );
   } catch {
     return false;
   }
