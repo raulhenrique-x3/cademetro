@@ -11,7 +11,7 @@ export default function ReportScreen() {
   const stationId = params.stationId ? parseInt(params.stationId, 10) : undefined;
 
   return (
-    <ScreenShell showBack scrollable={false} showBottomNav={false}>
+    <ScreenShell title="Reportar Trem" showBack scrollable={false} showBottomNav={false}>
       <ReportComposer
         initialLineId={lineId}
         initialStationId={stationId}

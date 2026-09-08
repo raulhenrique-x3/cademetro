@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, TrainFront } from 'lucide-react-native';
+import { Plus, TrainFront, MapPin } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/screen-shell';
-import { useLines } from '@/features/metro/queries';
+import { useLines, useStations } from '@/features/metro/queries';
 import { useAllLinesStatus } from '@/features/status/queries';
 import { useRecentReports } from '@/features/reports/queries';
 import { LineStatusCard } from '@/features/status/components/line-status-card';
@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useRealtime } from '@/hooks/use-realtime';
+import { useLocation } from '@/hooks/use-location';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -45,11 +46,24 @@ export default function HomeScreen() {
     refetch: refetchReports,
   } = useRecentReports({ limit: 10 });
 
+  const { data: stations = [] } = useStations();
+  const {
+    coords,
+    isLocating,
+    requestLocation,
+    nearestStation,
+  } = useLocation({ stations, showToastOnError: false });
+
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchLines(), refetchStatus(), refetchReports()]);
+    await Promise.all([
+      refetchLines(),
+      refetchStatus(),
+      refetchReports(),
+      coords ? requestLocation() : Promise.resolve(null),
+    ]);
     setRefreshing(false);
   };
 
@@ -73,6 +87,122 @@ export default function HomeScreen() {
             Como está o metrô agora?
           </Text>
         </View>
+
+        {/* Nearest station banner / Geolocation widget */}
+        {nearestStation ? (
+          <View
+            style={[
+              styles.nearestStationCard,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View style={styles.nearestStationHeader}>
+              <View
+                style={[
+                  styles.nearestPinBadge,
+                  { backgroundColor: theme.primary + '18' },
+                ]}
+              >
+                <MapPin size={16} color={theme.primary} />
+              </View>
+              <View style={styles.nearestStationInfo}>
+                <Text
+                  style={[
+                    styles.nearestStationLabel,
+                    { color: theme.mutedForeground },
+                  ]}
+                >
+                  Estação mais próxima de você
+                </Text>
+                <Text style={[styles.nearestStationName, { color: theme.text }]}>
+                  {nearestStation.station.name}
+                  <Text
+                    style={[
+                      styles.nearestStationDistance,
+                      { color: theme.primary },
+                    ]}
+                  >
+                    {` • a ${nearestStation.formattedDistance}`}
+                  </Text>
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.nearestStationActions}>
+              <Pressable
+                onPress={() =>
+                  router.push(`/station/${nearestStation.station.id}`)
+                }
+                style={({ pressed }) => [
+                  styles.nearestActionBtn,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.card,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Text style={[styles.nearestActionText, { color: theme.text }]}>
+                  Ver estação
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() =>
+                  router.push(
+                    `/report?stationId=${nearestStation.station.id}${
+                      nearestStation.station.lines?.[0]?.id
+                        ? `&lineId=${nearestStation.station.lines[0].id}`
+                        : ''
+                    }`,
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.nearestActionBtn,
+                  {
+                    borderColor: theme.primary,
+                    backgroundColor: theme.primary,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.nearestActionText,
+                    { color: theme.primaryForeground, fontWeight: '700' },
+                  ]}
+                >
+                  Reportar aqui
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => requestLocation()}
+            disabled={isLocating}
+            style={({ pressed }) => [
+              styles.locateMeButton,
+              {
+                borderColor: theme.border,
+                backgroundColor: theme.backgroundElement,
+                opacity: pressed || isLocating ? 0.7 : 1,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Detectar estação mais próxima"
+          >
+            <MapPin size={15} color={theme.primary} />
+            <Text style={[styles.locateMeText, { color: theme.text }]}>
+              {isLocating
+                ? 'Detectando estação próxima...'
+                : 'Detectar estação mais próxima'}
+            </Text>
+          </Pressable>
+        )}
 
         <Button
           size="lg"
@@ -243,5 +373,72 @@ const styles = StyleSheet.create({
   },
   reportsFeed: {
     gap: Spacing.two,
+  },
+  locateMeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
+  locateMeText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  nearestStationCard: {
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+    gap: Spacing.two,
+  },
+  nearestStationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  nearestPinBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nearestStationInfo: {
+    flex: 1,
+  },
+  nearestStationLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  nearestStationName: {
+    fontSize: Typography.bodyBold.fontSize,
+    fontWeight: '700',
+  },
+  nearestStationDistance: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  nearestStationActions: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.half,
+  },
+  nearestActionBtn: {
+    flex: 1,
+    paddingVertical: Spacing.one + 2,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.small,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nearestActionText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
   },
 });

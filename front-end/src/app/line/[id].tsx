@@ -32,7 +32,6 @@ export default function LineDetailScreen() {
 
   const {
     data: statusDto,
-    isLoading: loadingStatus,
     refetch: refetchStatus,
   } = useLineStatus(lineId);
 

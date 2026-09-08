@@ -72,21 +72,21 @@ function ToastSingleItem({
           icon: <CircleAlert size={20} color={theme.destructive} />,
           borderColor: theme.destructive,
           accentColor: theme.destructive,
-          bgColor: theme.statusInterruptedBg || theme.card,
+          bgColor: theme.statusInterruptedBg,
         };
       case 'success':
         return {
           icon: <CheckCircle2 size={20} color={theme.statusNormal} />,
           borderColor: theme.statusNormal,
           accentColor: theme.statusNormal,
-          bgColor: theme.statusNormalBg || theme.card,
+          bgColor: theme.statusNormalBg,
         };
       case 'warning':
         return {
           icon: <AlertTriangle size={20} color={theme.statusRestricted} />,
           borderColor: theme.statusRestricted,
           accentColor: theme.statusRestricted,
-          bgColor: theme.statusRestrictedBg || theme.card,
+          bgColor: theme.statusRestrictedBg,
         };
       case 'info':
       default:

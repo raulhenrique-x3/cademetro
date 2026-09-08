@@ -81,7 +81,7 @@ describe('Toast System and Global Mutation Error Handling', () => {
           mutationFn: async () => {
             throw backendError;
           },
-        }).execute();
+        }).execute(undefined as any);
       } catch {
         // expected failure
       }
@@ -104,7 +104,7 @@ describe('Toast System and Global Mutation Error Handling', () => {
           mutationFn: async () => {
             throw backendError;
           },
-        }).execute();
+        }).execute(undefined as any);
       } catch {
         // expected failure
       }

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, Navigation } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/screen-shell';
 import { useLines, useStations } from '@/features/metro/queries';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocation } from '@/hooks/use-location';
+import { calculateDistanceMeters, formatDistance, sortStationsByDistance } from '@/lib/location';
 
 export default function ExploreScreen() {
   const theme = useTheme();
@@ -17,6 +19,9 @@ export default function ExploreScreen() {
 
   const [search, setSearch] = useState('');
   const [selectedLineId, setSelectedLineId] = useState<number | undefined>(undefined);
+  const [sortByDistance, setSortByDistance] = useState(false);
+
+  const { coords, isLocating, requestLocation } = useLocation({ showToastOnError: true });
 
   const { data: lines = [], isLoading: loadingLines, error: linesError, refetch: refetchLines } =
     useLines();
@@ -40,6 +45,28 @@ export default function ExploreScreen() {
     const term = search.toLowerCase().trim();
     return stations.filter((s) => s.name.toLowerCase().includes(term));
   }, [stations, search]);
+
+  const displayedStations = useMemo(() => {
+    if (sortByDistance && coords) {
+      return sortStationsByDistance(coords, filteredStations);
+    }
+    return filteredStations;
+  }, [filteredStations, sortByDistance, coords]);
+
+  const handleToggleSortDistance = async () => {
+    if (!sortByDistance) {
+      if (!coords) {
+        const loc = await requestLocation();
+        if (loc) {
+          setSortByDistance(true);
+        }
+      } else {
+        setSortByDistance(true);
+      }
+    } else {
+      setSortByDistance(false);
+    }
+  };
 
   return (
     <ScreenShell refreshing={refreshing} onRefresh={handleRefresh}>
@@ -101,13 +128,58 @@ export default function ExploreScreen() {
         })}
       </View>
 
-      {/* Station Search */}
-      <Input
-        placeholder="Buscar estação (ex: Recife, Joana Bezerra, Aeroporto)..."
-        value={search}
-        onChangeText={setSearch}
-        containerStyle={styles.searchContainer}
-      />
+      {/* Station Search & Proximity Sort */}
+      <View style={styles.searchAndSortRow}>
+        <Input
+          placeholder="Buscar estação (ex: Recife, Joana Bezerra)..."
+          value={search}
+          onChangeText={setSearch}
+          containerStyle={styles.searchContainer}
+        />
+        <Pressable
+          onPress={handleToggleSortDistance}
+          disabled={isLocating}
+          style={({ pressed }) => [
+            styles.sortDistanceBtn,
+            {
+              backgroundColor:
+                sortByDistance && coords ? theme.primary : theme.card,
+              borderColor:
+                sortByDistance && coords ? theme.primary : theme.border,
+              opacity: pressed || isLocating ? 0.7 : 1,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Ordenar estações por distância"
+        >
+          <Navigation
+            size={14}
+            color={
+              sortByDistance && coords
+                ? theme.primaryForeground
+                : theme.primary
+            }
+          />
+          <Text
+            style={[
+              styles.sortDistanceText,
+              {
+                color:
+                  sortByDistance && coords
+                    ? theme.primaryForeground
+                    : theme.text,
+                fontWeight: sortByDistance && coords ? '700' : '500',
+              },
+            ]}
+          >
+            {isLocating
+              ? 'GPS...'
+              : sortByDistance && coords
+                ? 'Mais próximas'
+                : 'Perto de mim'}
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Stations List */}
       {loadingStations || loadingLines ? (
@@ -118,52 +190,88 @@ export default function ExploreScreen() {
         </View>
       ) : linesError || stationsError ? (
         <ErrorState onRetry={handleRefresh} />
-      ) : filteredStations.length === 0 ? (
+      ) : displayedStations.length === 0 ? (
         <EmptyState
           title="Nenhuma estação encontrada"
           description="Tente outro termo de busca ou selecione outra linha."
         />
       ) : (
         <View style={styles.stationsList}>
-          {filteredStations.map((station) => (
-            <Pressable
-              key={station.id}
-              onPress={() => router.push(`/station/${station.id}`)}
-              style={({ pressed }) => [
-                styles.stationCard,
-                {
-                  backgroundColor: theme.card,
-                  borderColor: theme.border,
-                  opacity: pressed ? 0.8 : 1,
-                },
-                Shadows.card,
-              ]}>
-              <View style={styles.stationMain}>
-                <MapPin size={18} color={theme.primary} />
-                <View>
-                  <Text style={[styles.stationName, { color: theme.text }]}>
-                    {station.name}
-                  </Text>
-                  {station.code && (
-                    <Text style={[styles.stationCode, { color: theme.mutedForeground }]}>
-                      {station.code}
-                    </Text>
-                  )}
-                </View>
-              </View>
+          {displayedStations.map((station) => {
+            const dist = coords
+              ? calculateDistanceMeters(
+                  coords.latitude,
+                  coords.longitude,
+                  station.latitude,
+                  station.longitude,
+                )
+              : null;
+            const formattedDist =
+              dist !== null && isFinite(dist) ? formatDistance(dist) : null;
 
-              <View style={styles.linesBadges}>
-                {station.lines?.map((l) => (
-                  <View
-                    key={l.id}
-                    style={[styles.linePill, { backgroundColor: l.color }]}>
-                    <Text style={styles.linePillText}>{l.code.split('-')[0]}</Text>
+            return (
+              <Pressable
+                key={station.id}
+                onPress={() => router.push(`/station/${station.id}`)}
+                style={({ pressed }) => [
+                  styles.stationCard,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                  Shadows.card,
+                ]}
+              >
+                <View style={styles.stationMain}>
+                  <MapPin size={18} color={theme.primary} />
+                  <View>
+                    <View style={styles.stationNameRow}>
+                      <Text style={[styles.stationName, { color: theme.text }]}>
+                        {station.name}
+                      </Text>
+                      {formattedDist && (
+                        <Text
+                          style={[
+                            styles.stationDistanceBadge,
+                            { color: theme.primary },
+                          ]}
+                        >
+                          {`• ${formattedDist}`}
+                        </Text>
+                      )}
+                    </View>
+                    {station.code && (
+                      <Text
+                        style={[
+                          styles.stationCode,
+                          { color: theme.mutedForeground },
+                        ]}
+                      >
+                        {station.code}
+                      </Text>
+                    )}
                   </View>
-                ))}
-                <Text style={[styles.arrow, { color: theme.mutedForeground }]}>›</Text>
-              </View>
-            </Pressable>
-          ))}
+                </View>
+
+                <View style={styles.linesBadges}>
+                  {station.lines?.map((l, index) => (
+                    <View
+                      key={`${station.id}-${l.id}-${index}`}
+                      style={[styles.linePill, { backgroundColor: l.color }]}
+                    >
+                      <Text style={styles.linePillText}>
+                        {l.code.split('-')[0]}
+                      </Text>
+                    </View>
+                  ))}
+                  <Text style={[styles.arrow, { color: theme.mutedForeground }]}>
+                    ›
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </ScreenShell>
@@ -195,8 +303,27 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: Typography.caption.fontSize,
   },
-  searchContainer: {
+  searchAndSortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     marginBottom: Spacing.three,
+  },
+  searchContainer: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  sortDistanceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.two + 2,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
+  sortDistanceText: {
+    fontSize: Typography.caption.fontSize,
   },
   stationsList: {
     gap: Spacing.two,
@@ -213,6 +340,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  stationNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  stationDistanceBadge: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
   },
   pinIcon: {
     fontSize: 18,

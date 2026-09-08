@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MapPin, Plus } from 'lucide-react-native';
+import { MapPin, Plus, Navigation } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/screen-shell';
 import { useStationDetail } from '@/features/metro/queries';
 import { useStationStatus } from '@/features/status/queries';
@@ -15,12 +15,16 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatTimeAgo } from '@/lib/date';
+import { useLocation } from '@/hooks/use-location';
+import { calculateDistanceMeters, formatDistance } from '@/lib/location';
 
 export default function StationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const stationId = id ? parseInt(id, 10) : 0;
   const router = useRouter();
   const theme = useTheme();
+
+  const { coords, isLocating, requestLocation } = useLocation({ showToastOnError: false });
 
   const {
     data: station,
@@ -29,9 +33,26 @@ export default function StationDetailScreen() {
     refetch: refetchStation,
   } = useStationDetail(stationId);
 
+  const distance = useMemo(() => {
+    if (
+      !coords ||
+      !station ||
+      typeof station.latitude !== 'number' ||
+      typeof station.longitude !== 'number'
+    ) {
+      return null;
+    }
+    const d = calculateDistanceMeters(
+      coords.latitude,
+      coords.longitude,
+      station.latitude,
+      station.longitude,
+    );
+    return isFinite(d) ? formatDistance(d) : null;
+  }, [coords, station]);
+
   const {
     data: statusDto,
-    isLoading: loadingStatus,
     refetch: refetchStatus,
   } = useStationStatus(stationId);
 
@@ -100,6 +121,32 @@ export default function StationDetailScreen() {
                     Código: {station.code}
                   </Text>
                 )}
+                {distance ? (
+                  <View style={styles.distanceRow}>
+                    <Navigation size={12} color={theme.primary} />
+                    <Text style={[styles.distanceText, { color: theme.primary }]}>
+                      A {distance} de você
+                    </Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() => requestLocation()}
+                    disabled={isLocating}
+                    style={styles.locatePromptRow}
+                  >
+                    <Navigation size={12} color={theme.mutedForeground} />
+                    <Text
+                      style={[
+                        styles.locatePromptText,
+                        { color: theme.mutedForeground },
+                      ]}
+                    >
+                      {isLocating
+                        ? 'Obtendo localização...'
+                        : 'Ver distância até você'}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             </View>
             <StatusBadge status={status} size="md" />
@@ -111,9 +158,9 @@ export default function StationDetailScreen() {
               <Text style={[styles.linesLabel, { color: theme.mutedForeground }]}>
                 Linhas atendidas:
               </Text>
-              {station.lines.map((l) => (
+              {station.lines.map((l, index) => (
                 <View
-                  key={l.id}
+                  key={`${station.id}-${l.id}-${index}`}
                   style={[styles.lineBadge, { backgroundColor: l.color }]}>
                   <Text style={styles.lineBadgeText}>{l.name}</Text>
                 </View>
@@ -207,6 +254,25 @@ const styles = StyleSheet.create({
   },
   stationCode: {
     fontSize: Typography.small.fontSize,
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  distanceText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  locatePromptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  locatePromptText: {
+    fontSize: Typography.caption.fontSize,
   },
   linesRow: {
     flexDirection: 'row',

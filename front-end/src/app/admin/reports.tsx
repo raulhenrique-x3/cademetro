@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/screen-shell';

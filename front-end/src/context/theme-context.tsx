@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { Colors, ColorTokens } from '@/constants/theme';
 import { storage, THEME_KEY } from '@/lib/storage';
@@ -18,30 +18,28 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useRNColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
-
-  useEffect(() => {
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
     const saved = storage.getItem(THEME_KEY) as ThemeMode | null;
     if (saved && (saved === 'system' || saved === 'light' || saved === 'dark')) {
-      setThemeModeState(saved);
+      return saved;
     }
-  }, []);
+    return 'system';
+  });
 
-  const setThemeMode = (mode: ThemeMode) => {
+  const setThemeMode = useCallback((mode: ThemeMode) => {
     setThemeModeState(mode);
     storage.setItem(THEME_KEY, mode);
-  };
-
-  const toggleTheme = () => {
-    const next: ThemeMode = colorScheme === 'dark' ? 'light' : 'dark';
-    setThemeMode(next);
-  };
+  }, []);
 
   const colorScheme: EffectiveColorScheme = useMemo(() => {
     if (themeMode === 'light') return 'light';
     if (themeMode === 'dark') return 'dark';
     return systemScheme === 'dark' ? 'dark' : 'light';
   }, [themeMode, systemScheme]);
+
+  const toggleTheme = useCallback(() => {
+    setThemeMode(colorScheme === 'dark' ? 'light' : 'dark');
+  }, [colorScheme, setThemeMode]);
 
   const colors = useMemo(() => Colors[colorScheme], [colorScheme]);
 
@@ -53,7 +51,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       setThemeMode,
       toggleTheme,
     }),
-    [themeMode, colorScheme, colors],
+    [themeMode, colorScheme, colors, setThemeMode, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TrainFront, ArrowLeft } from 'lucide-react-native';
@@ -17,7 +17,7 @@ export function Header({ title, showBack = false }: HeaderProps) {
   const { user, isAuthenticated } = useAuth();
   const { isConnected } = useRealtime();
   const router = useRouter();
-  const pulse = useRef(new Animated.Value(1)).current;
+  const [pulse] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     if (!isConnected) {
@@ -49,12 +49,24 @@ export function Header({ title, showBack = false }: HeaderProps) {
     <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
       <View style={styles.left}>
         {showBack ? (
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}>
-            <ArrowLeft size={16} color={theme.text} />
-            <Text style={[styles.backText, { color: theme.text }]}>Voltar</Text>
-          </Pressable>
+          <View style={styles.backContainer}>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Voltar"
+              style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}>
+              <ArrowLeft size={18} color={theme.text} />
+              <Text style={[styles.backText, { color: theme.text }]}>Voltar</Text>
+            </Pressable>
+            {title ? (
+              <View style={styles.titleDividerContainer}>
+                <View style={[styles.titleDivider, { backgroundColor: theme.border }]} />
+                <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
+                  {title}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         ) : (
           <Pressable
             onPress={() => router.push('/')}
@@ -126,16 +138,35 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.5,
   },
+  backContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  titleDividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: Spacing.one,
+  },
+  titleDivider: {
+    width: 1,
+    height: 16,
+    marginRight: Spacing.two,
+  },
+  headerTitle: {
+    fontSize: Typography.bodyBold.fontSize,
+    fontWeight: Typography.bodyBold.fontWeight,
+    maxWidth: 220,
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
     paddingVertical: Spacing.one,
-    paddingRight: Spacing.two,
+    paddingRight: Spacing.one,
   },
   backText: {
-    fontSize: Typography.bodyBold.fontSize,
-    fontWeight: '600',
+    fontSize: Typography.body.fontSize,
+    fontWeight: '500',
   },
   liveDot: {
     width: 8,

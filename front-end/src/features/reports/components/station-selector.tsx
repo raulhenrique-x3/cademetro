@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { MapPin, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { MapPin, Check, Search, X, ArrowLeftRight, Sparkles } from 'lucide-react-native';
 import { StationDto } from '@/api/types';
+import { Coordinates, calculateDistanceMeters, formatDistance, findNearestStation } from '@/lib/location';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,8 @@ export interface StationSelectorProps {
   error?: string;
   onLocateNearest?: () => void;
   isLocating?: boolean;
+  userLocation?: Coordinates | null;
+  lineColor?: string;
 }
 
 export function StationSelector({
@@ -22,14 +25,26 @@ export function StationSelector({
   error,
   onLocateNearest,
   isLocating,
+  userLocation,
+  lineColor,
 }: StationSelectorProps) {
   const theme = useTheme();
+  const isDark = theme.background === '#090D16';
+  const activeColor = lineColor || theme.primary;
+
   const [search, setSearch] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Find currently selected station
   const selectedStation = useMemo(() => {
     return stations.find((s) => s.id === value) || null;
   }, [stations, value]);
+
+  // Find nearest station from user's location
+  const nearestStation = useMemo(() => {
+    if (!userLocation || stations.length === 0) return null;
+    return findNearestStation(userLocation, stations);
+  }, [userLocation, stations]);
 
   // Filter stations by search term
   const filteredStations = useMemo(() => {
@@ -42,52 +57,195 @@ export function StationSelector({
     );
   }, [stations, search]);
 
+  const handleSelectStation = (stationId: number) => {
+    onChange(stationId);
+    setIsEditing(false);
+    setSearch('');
+  };
+
+  // 1. If a station is selected and user is NOT searching/editing
+  if (selectedStation && !isEditing) {
+    const selectedDistance = userLocation
+      ? calculateDistanceMeters(
+          userLocation.latitude,
+          userLocation.longitude,
+          selectedStation.latitude,
+          selectedStation.longitude,
+        )
+      : null;
+    const formatted =
+      selectedDistance !== null && isFinite(selectedDistance)
+        ? formatDistance(selectedDistance)
+        : null;
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.title, { color: theme.text }]}>Estação</Text>
+          <Pressable
+            onPress={() => setIsEditing(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Trocar estação"
+            style={({ pressed }) => [
+              styles.changeButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <ArrowLeftRight size={13} color={activeColor} />
+            <Text style={[styles.changeText, { color: activeColor }]}>Trocar estação</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={() => setIsEditing(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Estação selecionada: ${selectedStation.name}. Toque para alterar.`}
+          style={({ pressed }) => [
+            styles.selectedStationCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: error ? theme.destructive : activeColor,
+              borderWidth: 1.5,
+              opacity: pressed ? 0.9 : 1,
+            },
+          ]}>
+          <View
+            style={[
+              styles.stationIconContainer,
+              { backgroundColor: activeColor + (isDark ? '25' : '15') },
+            ]}>
+            <MapPin size={20} color={activeColor} strokeWidth={2.5} />
+          </View>
+
+          <View style={styles.selectedStationInfo}>
+            <Text style={[styles.selectedLabel, { color: theme.mutedForeground }]}>
+              Estação selecionada
+            </Text>
+            <Text style={[styles.selectedStationName, { color: theme.text }]}>
+              {selectedStation.name}
+            </Text>
+
+            <View style={styles.metaRow}>
+              {formatted && (
+                <View
+                  style={[
+                    styles.distanceChip,
+                    { backgroundColor: theme.backgroundElement },
+                  ]}>
+                  <Text style={[styles.distanceChipText, { color: theme.mutedForeground }]}>
+                    📍 a {formatted}
+                  </Text>
+                </View>
+              )}
+
+              {selectedStation.lines && selectedStation.lines.length > 0 && (
+                <View style={styles.lineBadgesRow}>
+                  {selectedStation.lines.map((l, index) => (
+                    <View
+                      key={`${selectedStation.id}-${l.id}-${index}`}
+                      style={[styles.lineDot, { backgroundColor: l.color }]}>
+                      <Text style={styles.lineDotText}>{l.code.split('-')[0]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+
+          <View style={[styles.selectedCheckBadge, { backgroundColor: activeColor }]}>
+            <Check size={14} color="#FFFFFF" strokeWidth={3} />
+          </View>
+        </Pressable>
+
+        {error && <Text style={[styles.error, { color: theme.destructive }]}>{error}</Text>}
+      </View>
+    );
+  }
+
+  // 2. Station Search / Picker State
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.text }]}>Onde você está?</Text>
+        <View>
+          <Text style={[styles.title, { color: theme.text }]}>Onde você está?</Text>
+          <Text style={[styles.subtitle, { color: theme.mutedForeground }]}>
+            Selecione a estação onde o trem foi avistado
+          </Text>
+        </View>
+
         {onLocateNearest && (
           <Pressable
             onPress={onLocateNearest}
             disabled={isLocating}
+            accessibilityRole="button"
+            accessibilityLabel="Detectar estação mais próxima por GPS"
             style={({ pressed }) => [
               styles.locateButton,
-              { opacity: pressed || isLocating ? 0.7 : 1 },
+              {
+                backgroundColor: activeColor + (isDark ? '25' : '15'),
+                borderColor: activeColor,
+                opacity: pressed || isLocating ? 0.7 : 1,
+              },
             ]}>
-            <MapPin size={13} color={theme.primary} />
-            <Text style={[styles.locateText, { color: theme.primary }]}>
-              {isLocating ? 'Buscando...' : 'Estação mais próxima'}
+            {isLocating ? (
+              <ActivityIndicator size="small" color={activeColor} />
+            ) : (
+              <MapPin size={13} color={activeColor} />
+            )}
+            <Text style={[styles.locateText, { color: activeColor }]}>
+              {isLocating ? 'Buscando...' : 'Mais próxima'}
             </Text>
           </Pressable>
         )}
       </View>
 
-      {/* Selected station highlight chip */}
-      {selectedStation && (
-        <View
-          style={[
-            styles.selectedChip,
+      {/* Suggested Station Pill if available and not selected */}
+      {nearestStation && nearestStation.station.id !== value && (
+        <Pressable
+          onPress={() => handleSelectStation(nearestStation.station.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Estação sugerida: ${nearestStation.station.name}`}
+          style={({ pressed }) => [
+            styles.suggestionCard,
             {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.primary,
+              backgroundColor: activeColor + (isDark ? '20' : '10'),
+              borderColor: activeColor,
+              opacity: pressed ? 0.8 : 1,
             },
           ]}>
-          <MapPin size={16} color={theme.primary} />
-          <Text style={[styles.selectedStationName, { color: theme.text }]}>
-            {selectedStation.name}
-          </Text>
-          <Check size={14} color={theme.primary} />
-          <Text style={[styles.checkIcon, { color: theme.primary }]}>Selecionada</Text>
-        </View>
+          <View style={styles.suggestionLeft}>
+            <Sparkles size={16} color={activeColor} />
+            <View>
+              <Text style={[styles.suggestionTitle, { color: activeColor }]}>
+                Sugerida para você
+              </Text>
+              <Text style={[styles.suggestionStationName, { color: theme.text }]}>
+                {nearestStation.station.name} • {nearestStation.formattedDistance}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.selectPill, { backgroundColor: activeColor }]}>
+            <Text style={styles.selectPillText}>Selecionar</Text>
+          </View>
+        </Pressable>
       )}
 
-      {/* Search Input */}
-      <Input
-        placeholder="Buscar estação..."
-        value={search}
-        onChangeText={setSearch}
-        containerStyle={styles.searchInput}
-      />
+      {/* Search Bar */}
+      <View style={styles.searchWrapper}>
+        <Input
+          placeholder="Buscar por nome da estação..."
+          value={search}
+          onChangeText={setSearch}
+          leftIcon={<Search size={16} color={theme.mutedForeground} />}
+          rightIcon={
+            search.length > 0 ? (
+              <Pressable onPress={() => setSearch('')}>
+                <X size={16} color={theme.mutedForeground} />
+              </Pressable>
+            ) : undefined
+          }
+          containerStyle={styles.searchInput}
+        />
+      </View>
 
       {/* Station List */}
       <ScrollView
@@ -95,68 +253,130 @@ export function StationSelector({
           styles.scrollList,
           {
             backgroundColor: theme.card,
-            borderColor: theme.border,
+            borderColor: error ? theme.destructive : theme.border,
           },
         ]}
-        nestedScrollEnabled>
+        nestedScrollEnabled
+        showsVerticalScrollIndicator>
         {filteredStations.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.mutedForeground }]}>
-              Nenhuma estação encontrada
+              Nenhuma estação encontrada para &quot;{search}&quot;
             </Text>
           </View>
         ) : (
-          filteredStations.map((station) => {
+          filteredStations.map((station, index) => {
             const isSelected = station.id === value;
+            const dist = userLocation
+              ? calculateDistanceMeters(
+                  userLocation.latitude,
+                  userLocation.longitude,
+                  station.latitude,
+                  station.longitude,
+                )
+              : null;
+            const formattedDist = dist !== null && isFinite(dist) ? formatDistance(dist) : null;
+            const isLast = index === filteredStations.length - 1;
+
             return (
               <Pressable
                 key={station.id}
-                onPress={() => onChange(station.id)}
+                onPress={() => handleSelectStation(station.id)}
                 accessibilityRole="radio"
+                accessibilityLabel={`${station.name}${formattedDist ? `, a ${formattedDist}` : ''}`}
                 accessibilityState={{ selected: isSelected }}
                 style={({ pressed }) => [
                   styles.stationItem,
                   {
                     backgroundColor: isSelected
-                      ? theme.backgroundSelected
+                      ? activeColor + (isDark ? '25' : '15')
                       : 'transparent',
                     borderBottomColor: theme.border,
+                    borderBottomWidth: isLast ? 0 : 1,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}>
-                <View style={styles.stationInfo}>
-                  <Text
+                <View style={styles.stationItemLeft}>
+                  <View
                     style={[
-                      styles.stationName,
+                      styles.stationPinIcon,
                       {
-                        color: theme.text,
-                        fontWeight: isSelected ? '700' : '500',
+                        backgroundColor: isSelected
+                          ? activeColor
+                          : isDark
+                          ? '#1E293B'
+                          : '#F1F5F9',
                       },
                     ]}>
-                    {station.name}
-                  </Text>
-                  {station.lines && station.lines.length > 0 && (
-                    <View style={styles.lineBadgesRow}>
-                      {station.lines.map((l) => (
-                        <View
-                          key={l.id}
-                          style={[styles.lineDot, { backgroundColor: l.color }]}>
-                          <Text style={styles.lineDotText}>{l.code.split('-')[0]}</Text>
+                    <MapPin
+                      size={14}
+                      color={isSelected ? '#FFFFFF' : theme.mutedForeground}
+                    />
+                  </View>
+
+                  <View style={styles.stationNameCol}>
+                    <Text
+                      style={[
+                        styles.stationName,
+                        {
+                          color: isSelected ? (isDark ? '#FFFFFF' : activeColor) : theme.text,
+                          fontWeight: isSelected ? '700' : '500',
+                        },
+                      ]}>
+                      {station.name}
+                    </Text>
+
+                    <View style={styles.metaRow}>
+                      {formattedDist && (
+                        <Text style={[styles.distanceText, { color: theme.mutedForeground }]}>
+                          a {formattedDist}
+                        </Text>
+                      )}
+
+                      {station.lines && station.lines.length > 0 && (
+                        <View style={styles.lineBadgesRow}>
+                          {station.lines.map((l, lIdx) => (
+                            <View
+                              key={`${station.id}-${l.id}-${lIdx}`}
+                              style={[styles.lineDot, { backgroundColor: l.color }]}>
+                              <Text style={styles.lineDotText}>{l.code.split('-')[0]}</Text>
+                            </View>
+                          ))}
                         </View>
-                      ))}
+                      )}
                     </View>
-                  )}
+                  </View>
                 </View>
-                {isSelected && (
-                  <Text style={[styles.selectedIndicator, { color: theme.primary }]}>
-                    ●
-                  </Text>
+
+                {isSelected ? (
+                  <View style={[styles.checkBadge, { backgroundColor: activeColor }]}>
+                    <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                  </View>
+                ) : (
+                  <View style={[styles.radioCircle, { borderColor: theme.border }]} />
                 )}
               </Pressable>
             );
           })
         )}
       </ScrollView>
+
+      {/* Cancel search if previously had station selected */}
+      {selectedStation && isEditing && (
+        <Pressable
+          onPress={() => {
+            setIsEditing(false);
+            setSearch('');
+          }}
+          style={({ pressed }) => [
+            styles.cancelEditBtn,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}>
+          <Text style={[styles.cancelEditText, { color: theme.mutedForeground }]}>
+            Manter estação selecionada ({selectedStation.name})
+          </Text>
+        </Pressable>
+      )}
 
       {error && <Text style={[styles.error, { color: theme.destructive }]}>{error}</Text>}
     </View>
@@ -171,97 +391,216 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.one,
+    marginBottom: Spacing.two,
   },
   title: {
     fontSize: Typography.bodyBold.fontSize,
     fontWeight: Typography.bodyBold.fontWeight,
   },
-  locateButton: {
+  subtitle: {
+    fontSize: Typography.caption.fontSize,
+    marginTop: 2,
+  },
+  changeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingVertical: Spacing.half,
+    paddingHorizontal: Spacing.one,
   },
-  locateText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
-  },
-  selectedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: 1.5,
-    marginBottom: Spacing.two,
-    gap: Spacing.two,
-  },
-  pinIcon: {
-    fontSize: 16,
-  },
-  selectedStationName: {
-    fontSize: Typography.bodyBold.fontSize,
-    fontWeight: Typography.bodyBold.fontWeight,
-    flex: 1,
-  },
-  checkIcon: {
+  changeText: {
     fontSize: Typography.caption.fontSize,
     fontWeight: '700',
   },
-  searchInput: {
+  selectedStationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    gap: Spacing.two + 2,
+  },
+  stationIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: Radius.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedStationInfo: {
+    flex: 1,
+  },
+  selectedLabel: {
+    fontSize: Typography.small.fontSize,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  selectedStationName: {
+    fontSize: Typography.bodyBold.fontSize + 1,
+    fontWeight: '700',
+    lineHeight: 22,
+    marginTop: 1,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one + 2,
+    marginTop: 4,
+  },
+  distanceChip: {
+    paddingVertical: 2,
+    paddingHorizontal: Spacing.one,
+    borderRadius: Radius.small,
+  },
+  distanceChipText: {
+    fontSize: Typography.small.fontSize,
+    fontWeight: '500',
+  },
+  selectedCheckBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  locateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  locateText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '700',
+  },
+  suggestionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.two + 2,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
     marginBottom: Spacing.two,
   },
+  suggestionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    flex: 1,
+  },
+  suggestionTitle: {
+    fontSize: Typography.small.fontSize,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  suggestionStationName: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  selectPill: {
+    paddingVertical: Spacing.half + 2,
+    paddingHorizontal: Spacing.two + 2,
+    borderRadius: Radius.full,
+  },
+  selectPillText: {
+    color: '#FFFFFF',
+    fontSize: Typography.small.fontSize,
+    fontWeight: '700',
+  },
+  searchWrapper: {
+    marginBottom: Spacing.one,
+  },
+  searchInput: {
+    marginBottom: 0,
+  },
   scrollList: {
-    maxHeight: 180,
+    maxHeight: 200,
     borderWidth: 1,
     borderRadius: Radius.medium,
   },
   emptyContainer: {
-    padding: Spacing.three,
+    padding: Spacing.four,
     alignItems: 'center',
   },
   emptyText: {
     fontSize: Typography.caption.fontSize,
+    textAlign: 'center',
   },
   stationItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Spacing.two,
+    paddingVertical: Spacing.two + 2,
     paddingHorizontal: Spacing.three,
-    borderBottomWidth: 1,
   },
-  stationInfo: {
+  stationItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+    flex: 1,
+  },
+  stationPinIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: Radius.small,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stationNameCol: {
+    flex: 1,
   },
   stationName: {
     fontSize: Typography.body.fontSize,
+  },
+  distanceText: {
+    fontSize: Typography.small.fontSize,
   },
   lineBadgesRow: {
     flexDirection: 'row',
     gap: 4,
   },
   lineDot: {
-    width: 18,
-    height: 18,
+    width: 16,
+    height: 16,
     borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lineDotText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
   },
-  selectedIndicator: {
-    fontSize: 14,
-    fontWeight: '700',
+  checkBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+  },
+  cancelEditBtn: {
+    paddingVertical: Spacing.one,
+    alignItems: 'center',
+    marginTop: Spacing.one,
+  },
+  cancelEditText: {
+    fontSize: Typography.caption.fontSize,
+    textDecorationLine: 'underline',
   },
   error: {
     fontSize: Typography.small.fontSize,
     marginTop: Spacing.one,
+    fontWeight: '500',
   },
 });

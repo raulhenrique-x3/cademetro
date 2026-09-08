@@ -9,7 +9,6 @@ import {
 import { Pressable, View, StyleSheet, Text } from 'react-native';
 import { TrainFront, Map, Plus, User } from 'lucide-react-native';
 import {
-  Colors,
   MaxContentWidth,
   Radius,
   Spacing,

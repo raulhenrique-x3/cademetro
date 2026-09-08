@@ -4,15 +4,15 @@ import { CircleCheck, TriangleAlert, CircleX, CircleAlert } from 'lucide-react-n
 import { LineStatus } from '@/api/types';
 import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { STATUS_CONFIG } from '@/constants/metro';
+
+export { STATUS_CONFIG };
 
 export interface StatusBadgeProps {
   status: LineStatus;
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
 }
-
-import { STATUS_CONFIG } from '@/constants/metro';
-export { STATUS_CONFIG };
 
 function StatusIcon({ status, size, color }: { status: LineStatus; size: number; color: string }) {
   switch (status) {

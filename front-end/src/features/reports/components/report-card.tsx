@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   TrainFront,
@@ -11,7 +11,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from 'lucide-react-native';
-import { ReportDto, ReportTypeString } from '@/api/types';
+import { ReportDto } from '@/api/types';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/context/toast-context';
@@ -55,8 +55,6 @@ export function ReportCard({ report }: ReportCardProps) {
   const confirmMutation = useConfirmReport();
   const disputeMutation = useDisputeReport();
   const hideMutation = useHideReport();
-
-  const [hideReason, setHideReason] = useState(false);
 
   const typeConfig = REPORT_TYPE_CONFIG[report.type] || {
     label: report.type,
@@ -158,7 +156,7 @@ export function ReportCard({ report }: ReportCardProps) {
       {/* Description */}
       {report.description ? (
         <Text style={[styles.description, { color: theme.text }]}>
-          "{report.description}"
+          &quot;{report.description}&quot;
         </Text>
       ) : null}
 

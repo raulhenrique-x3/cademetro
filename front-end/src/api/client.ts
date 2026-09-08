@@ -21,12 +21,14 @@ function createTimeoutSignal(timeoutMs: number): AbortSignal | undefined {
   return undefined;
 }
 
+// eslint-disable-next-line import/no-named-as-default-member
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 // Request interceptor: attach bearer token and ensure guaranteed AbortSignal timeout
@@ -48,11 +50,12 @@ apiClient.interceptors.request.use(
 );
 
 // Response interceptor: error normalization & auto-refresh
-let isRefreshing = false;
-let failedQueue: Array<{
+interface FailedRequestQueueItem {
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
-}> = [];
+}
+let isRefreshing = false;
+let failedQueue: FailedRequestQueueItem[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {

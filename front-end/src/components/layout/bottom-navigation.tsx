@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrainFront, Map, Plus, User } from 'lucide-react-native';
@@ -24,7 +24,6 @@ export function BottomNavigation() {
     pathname.startsWith('/explore') ||
     pathname.startsWith('/line') ||
     pathname.startsWith('/station');
-  const isReport = pathname.startsWith('/report');
   const isProfile =
     pathname.startsWith('/profile') ||
     pathname.startsWith('/login') ||

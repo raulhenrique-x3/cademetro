@@ -94,4 +94,19 @@ describe('Frontend Flow and Cache Integration', () => {
     expect(updated.reports[0].confirmations.confirm).toBe(2);
     expect(updated.reports[0].confidence).toBe(0.85);
   });
+
+  it('configures splash screen with Cadê Metrô dark theme and assets in app.json', async () => {
+    const appJson = await import('../app.json');
+    expect(appJson.expo.plugins).toBeDefined();
+    const splashPlugin = appJson.expo.plugins.find(
+      (p: any) => Array.isArray(p) && p[0] === 'expo-splash-screen',
+    );
+    expect(splashPlugin).toBeDefined();
+    const config = (splashPlugin as any)[1];
+    expect(config.backgroundColor).toBe('#050B14');
+    expect(config.image).toBe('./assets/images/splash-icon.png');
+    expect(appJson.expo.splash.backgroundColor).toBe('#050B14');
+    expect(appJson.expo.splash.image).toBe('./assets/images/splash-icon.png');
+  });
 });
+
