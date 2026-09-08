@@ -5,15 +5,13 @@ import {
   Delete,
   Body,
   Query,
-  Req,
   Res,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -21,6 +19,13 @@ import { RefreshTokenDto } from './dto/refresh.dto.js';
 import { TokenResponseDto, RegisterResponseDto, UserDto } from './dto/user.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator.js';
+import {
+  createOauthState,
+  isValidRedirectUrl,
+  mapGoogleSignInError,
+  parseOauthState,
+  sanitizeOauthError,
+} from './oauth-state.js';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -96,26 +101,9 @@ export class AuthController {
     @Res() res: Response,
     @Query('returnUrl') returnUrl?: string,
   ): void {
-    const state = randomBytes(24).toString('hex');
-
-    res.cookie('google_oauth_state', state, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 10 * 60 * 1000,
-      path: '/auth/google',
-    });
-
-    if (returnUrl && isValidRedirectUrl(returnUrl)) {
-      res.cookie('google_oauth_return_url', returnUrl, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
-        maxAge: 10 * 60 * 1000,
-        path: '/auth/google',
-      });
-    }
-
+    const safeReturnUrl =
+      returnUrl && isValidRedirectUrl(returnUrl) ? returnUrl : undefined;
+    const state = createOauthState(safeReturnUrl);
     res.redirect(this.authService.buildGoogleAuthUrl(state));
   }
 
@@ -126,20 +114,22 @@ export class AuthController {
   async googleCallback(
     @Query('code') code: string | undefined,
     @Query('state') state: string | undefined,
-    @Req() req: Request,
+    @Query('error') googleError: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    const returnUrlCookie = parseCookie(req.headers.cookie, 'google_oauth_return_url');
-    const targetUrl =
-      returnUrlCookie && isValidRedirectUrl(returnUrlCookie)
-        ? returnUrlCookie
-        : this.authService.oauthRedirectUrl;
+    const payload = state ? parseOauthState(state) : null;
+    const returnUrl =
+      payload?.r && isValidRedirectUrl(payload.r) ? payload.r : null;
+    const targetUrl = returnUrl ?? this.authService.oauthRedirectUrl;
 
-    res.clearCookie('google_oauth_state', { path: '/auth/google' });
-    res.clearCookie('google_oauth_return_url', { path: '/auth/google' });
+    if (googleError) {
+      res.redirect(
+        this.authService.buildOauthErrorUrl(sanitizeOauthError(googleError), targetUrl),
+      );
+      return;
+    }
 
-    const expectedState = parseCookie(req.headers.cookie, 'google_oauth_state');
-    if (!code || !state || !expectedState || !safeStateEqual(state, expectedState)) {
+    if (!code || !payload) {
       res.redirect(this.authService.buildOauthErrorUrl('invalid_state', targetUrl));
       return;
     }
@@ -152,52 +142,10 @@ export class AuthController {
       });
       const separator = targetUrl.includes('?') ? '&' : '?';
       res.redirect(`${targetUrl}${separator}${params.toString()}`);
-    } catch {
-      res.redirect(this.authService.buildOauthErrorUrl('access_denied', targetUrl));
+    } catch (err) {
+      res.redirect(
+        this.authService.buildOauthErrorUrl(mapGoogleSignInError(err), targetUrl),
+      );
     }
-  }
-}
-
-function parseCookie(header: string | undefined, name: string): string | null {
-  if (!header) {
-    return null;
-  }
-  for (const part of header.split(';')) {
-    const [key, ...rest] = part.trim().split('=');
-    if (key === name) {
-      return rest.join('=');
-    }
-  }
-  return null;
-}
-
-function safeStateEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) {
-    return false;
-  }
-  return timingSafeEqual(bufA, bufB);
-}
-
-const BLOCKED_REDIRECT_SCHEMES = new Set(['javascript', 'data', 'file', 'vbscript']);
-
-function isValidRedirectUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    const scheme = parsed.protocol.replace(/:$/, '').toLowerCase();
-
-    if (scheme === 'http' || scheme === 'https') {
-      return true;
-    }
-
-    // Custom app deep-link schemes: cademetro:// (produção) e exp:// (Expo Go/dev)
-    return (
-      !BLOCKED_REDIRECT_SCHEMES.has(scheme) &&
-      /^[a-z][a-z0-9+.-]*$/.test(scheme) &&
-      (parsed.host !== '' || parsed.pathname.length > 1)
-    );
-  } catch {
-    return false;
   }
 }

@@ -13,37 +13,50 @@ import { ErrorState } from '@/components/ui/error-state';
 // Complete auth session if opened in a web popup / browser tab
 WebBrowser.maybeCompleteAuthSession();
 
+function firstParam(value?: string | string[]): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+const EMPTY_CALLBACK_TIMEOUT_MS = 2000;
+
 export default function AuthCallbackScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { loginWithTokens } = useAuth();
+  const { loginWithTokens, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const params = useLocalSearchParams<{
-    accessToken?: string;
-    refreshToken?: string;
-    error?: string;
+    accessToken?: string | string[];
+    refreshToken?: string | string[];
+    error?: string | string[];
   }>();
 
-  const { accessToken, refreshToken, error } = params;
-  const initialError = error ? parseGoogleOAuthError(error) : null;
+  const accessToken = firstParam(params.accessToken);
+  const refreshToken = firstParam(params.refreshToken);
+  const error = firstParam(params.error);
+  const urlError = error ? parseGoogleOAuthError(error) : null;
 
-  const [status, setStatus] = useState<'loading' | 'error' | 'success'>(
-    initialError ? 'error' : 'loading',
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(initialError);
+  const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const handledRef = useRef(false);
+  const displayStatus = urlError ? 'error' : status;
+  const displayError = urlError ?? errorMessage;
 
   useEffect(() => {
-    if (handledRef.current) return;
-    handledRef.current = true;
-
-    if (error) {
-      const friendlyError = parseGoogleOAuthError(error);
-      showError(new Error(friendlyError));
+    if (urlError) {
+      if (!handledRef.current) {
+        handledRef.current = true;
+        showError(new Error(urlError));
+      }
       return;
     }
 
+    if (handledRef.current) return;
+
     if (accessToken && refreshToken) {
+      handledRef.current = true;
       loginWithTokens({ accessToken, refreshToken })
         .then(() => {
           setStatus('success');
@@ -59,14 +72,35 @@ export default function AuthCallbackScreen() {
       return;
     }
 
-    // No tokens or error provided, redirect back to login
-    router.replace('/login');
-  }, [accessToken, refreshToken, error, loginWithTokens, router, showSuccess, showError]);
+    if (isAuthenticated) {
+      handledRef.current = true;
+      router.replace('/');
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (handledRef.current) return;
+      handledRef.current = true;
+      setStatus('error');
+      setErrorMessage('Não foi possível concluir o login com o Google. Tente novamente.');
+    }, EMPTY_CALLBACK_TIMEOUT_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    accessToken,
+    refreshToken,
+    urlError,
+    isAuthenticated,
+    loginWithTokens,
+    router,
+    showSuccess,
+    showError,
+  ]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        {status === 'loading' && (
+        {displayStatus === 'loading' && (
           <View style={styles.stateWrapper}>
             <ActivityIndicator size="large" color={theme.primary} />
             <Text style={[styles.title, { color: theme.text }]}>
@@ -78,11 +112,11 @@ export default function AuthCallbackScreen() {
           </View>
         )}
 
-        {status === 'error' && (
+        {displayStatus === 'error' && (
           <View style={styles.stateWrapper}>
             <ErrorState
               title="Falha no login com Google"
-              message={errorMessage || 'Não foi possível concluir o login.'}
+              message={displayError || 'Não foi possível concluir o login.'}
             />
             <Button
               variant="primary"
@@ -94,7 +128,7 @@ export default function AuthCallbackScreen() {
           </View>
         )}
 
-        {status === 'success' && (
+        {displayStatus === 'success' && (
           <View style={styles.stateWrapper}>
             <ActivityIndicator size="small" color={theme.primary} />
             <Text style={[styles.title, { color: theme.text }]}>

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AppState } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { authApi, parseGoogleOAuthError } from '@/api/auth';
@@ -24,6 +25,23 @@ interface AuthContextType {
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+}
+
+const GOOGLE_AUTH_TIMEOUT_MS = 90_000;
+const APP_RESUME_DISMISS_MS = 800;
+
+function firstQueryValue(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return typeof value[0] === 'string' ? value[0] : undefined;
+  }
+  return typeof value === 'string' ? value : undefined;
+}
+
+function dismissGoogleAuthSession() {
+  try {
+    WebBrowser.dismissAuthSession();
+  } catch {
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,31 +127,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const redirectUrl = Linking.createURL('auth/callback');
     const authUrl = authApi.getGoogleAuthUrl(redirectUrl);
 
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+    let settled = false;
+    let timedOut = false;
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined;
 
-    if (result.type === 'success' && result.url) {
-      const parsed = Linking.parse(result.url);
-      const queryParams = parsed.queryParams || {};
-      const accessToken = queryParams.accessToken as string | undefined;
-      const refreshToken = queryParams.refreshToken as string | undefined;
-      const error = queryParams.error as string | undefined;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      dismissGoogleAuthSession();
+    }, GOOGLE_AUTH_TIMEOUT_MS);
 
-      if (error) {
-        throw new Error(parseGoogleOAuthError(error));
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || settled) {
+        return;
+      }
+      if (resumeTimer) {
+        clearTimeout(resumeTimer);
+      }
+      resumeTimer = setTimeout(() => {
+        if (!settled) {
+          dismissGoogleAuthSession();
+        }
+      }, APP_RESUME_DISMISS_MS);
+    });
+
+    try {
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+      settled = true;
+
+      if (timedOut) {
+        throw new Error('Tempo esgotado ao autenticar com o Google. Tente novamente.');
       }
 
-      if (accessToken && refreshToken) {
-        return await loginWithTokens({ accessToken, refreshToken });
+      if (result.type === 'success' && result.url) {
+        const parsed = Linking.parse(result.url);
+        const queryParams = parsed.queryParams || {};
+        const accessToken = firstQueryValue(queryParams.accessToken);
+        const refreshToken = firstQueryValue(queryParams.refreshToken);
+        const error = firstQueryValue(queryParams.error);
+
+        if (error) {
+          throw new Error(parseGoogleOAuthError(error));
+        }
+
+        if (accessToken && refreshToken) {
+          return await loginWithTokens({ accessToken, refreshToken });
+        }
+
+        throw new Error('Tokens não recebidos do Google. Tente novamente.');
       }
 
-      throw new Error('Tokens não recebidos do Google. Tente novamente.');
-    }
-
-    if (result.type === 'cancel' || result.type === 'dismiss') {
       return null;
+    } finally {
+      settled = true;
+      clearTimeout(timeoutId);
+      if (resumeTimer) {
+        clearTimeout(resumeTimer);
+      }
+      appStateSub.remove();
     }
-
-    return null;
   }, [loginWithTokens]);
 
   const logout = async (): Promise<void> => {

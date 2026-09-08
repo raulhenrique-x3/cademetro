@@ -1,6 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthService } from './auth.service.js';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
 vi.mock('../../infra/database/prisma/db.js', () => {
@@ -10,6 +14,11 @@ vi.mock('../../infra/database/prisma/db.js', () => {
   const User = {
     where: (criteria: any) => ({
       first: async () => users.find((u) => Object.entries(criteria).every(([k, v]) => u[k] === v)),
+      update: async (data: any) => {
+        const user = users.find((u) => Object.entries(criteria).every(([k, v]) => u[k] === v));
+        if (user) Object.assign(user, data);
+        return user;
+      },
     }),
     create: async (data: any) => {
       const user = { id: users.length + 1, createdAt: '2026-09-03T12:00:00.000Z', ...data };
@@ -199,6 +208,105 @@ describe('AuthService', () => {
       expect(result.id).toBe(1);
       expect(result.trustScore).toBe(0.75);
       expect((result as any).passwordHash).toBeUndefined();
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    const originalFetch = globalThis.fetch;
+    const originalEnv = {
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+      GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
+    };
+
+    beforeEach(() => {
+      process.env.GOOGLE_CLIENT_ID = 'google-client-id';
+      process.env.GOOGLE_CLIENT_SECRET = 'google-client-secret';
+      process.env.GOOGLE_CALLBACK_URL = 'https://api.example.com/auth/google/callback';
+    });
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      for (const [key, value] of Object.entries(originalEnv)) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+    });
+
+    function mockGoogleApis(profile: {
+      sub: string;
+      email: string;
+      email_verified?: boolean;
+      name?: string | null;
+    }) {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ access_token: 'google-access' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => profile,
+        }) as typeof fetch;
+    }
+
+    it('creates a new user and issues tokens', async () => {
+      mockGoogleApis({
+        sub: 'google-sub-1',
+        email: 'google@example.com',
+        email_verified: true,
+        name: 'Google User',
+      });
+
+      const result = await authService.signInWithGoogle('auth-code');
+
+      expect(result.accessToken).toBe('fake-access-token');
+      expect(result.refreshToken).toBeTruthy();
+      const stored = dbModule.__users.find((u: any) => u.googleId === 'google-sub-1');
+      expect(stored.email).toBe('google@example.com');
+      expect(stored.passwordHash).toBeNull();
+    });
+
+    it('rejects a suspended google account', async () => {
+      await db.orm.public.User.create({
+        email: 'suspended@example.com',
+        googleId: 'gid-sus',
+        passwordHash: null,
+        username: 'sus',
+        name: null,
+        role: 'USER',
+        status: 'SUSPENDED',
+      });
+      mockGoogleApis({
+        sub: 'gid-sus',
+        email: 'suspended@example.com',
+        email_verified: true,
+      });
+
+      await expect(authService.signInWithGoogle('auth-code')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejects email already linked to another google account', async () => {
+      await db.orm.public.User.create({
+        email: 'taken@example.com',
+        googleId: 'other-google',
+        passwordHash: null,
+        username: 'taken',
+        name: null,
+        role: 'USER',
+        status: 'ACTIVE',
+      });
+      mockGoogleApis({
+        sub: 'new-google',
+        email: 'taken@example.com',
+        email_verified: true,
+      });
+
+      await expect(authService.signInWithGoogle('auth-code')).rejects.toThrow(ConflictException);
     });
   });
 });

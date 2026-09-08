@@ -56,6 +56,21 @@ describe('Google OAuth Front-end Integration', () => {
       expect(msg).toContain('já está vinculado a outra conta');
     });
 
+    it('translates unverified email error', () => {
+      const msg = parseGoogleOAuthError('email_unverified');
+      expect(msg).toContain('não está verificado');
+    });
+
+    it('translates google unavailable error', () => {
+      const msg = parseGoogleOAuthError('google_unavailable');
+      expect(msg).toContain('indisponível');
+    });
+
+    it('reads the first code when expo-router passes an array', () => {
+      const msg = parseGoogleOAuthError(['invalid_state']);
+      expect(msg).toContain('Sessão de autenticação expirada');
+    });
+
     it('handles null or empty errors gracefully', () => {
       expect(parseGoogleOAuthError(null)).toContain('Falha na autenticação com o Google');
       expect(parseGoogleOAuthError('')).toContain('Falha na autenticação com o Google');

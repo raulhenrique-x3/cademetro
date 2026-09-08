@@ -92,9 +92,9 @@ OAUTH_REDIRECT_URL="cademetro://auth/callback"
 > backend direto na máquina host (fora do Docker), troque o host para `localhost:5434`.
 >
 > **Google OAuth**: a `redirect_uri` registrada no console do Google deve ser exatamente a
-> `GOOGLE_CALLBACK_URL` (URL pública do backend + `/auth/google/callback`). Após o login, o backend
-> redireciona para `OAUTH_REDIRECT_URL` com `accessToken` e `refreshToken` na query string
-> (deep link `cademetro://` por padrão).
+> `GOOGLE_CALLBACK_URL` (URL pública do backend + `/auth/google/callback`). O app envia `returnUrl`
+> (`Linking.createURL('auth/callback')`); o backend devolve os tokens nesse endereço. Sem `returnUrl`
+> válido, cai em `OAUTH_REDIRECT_URL` (`cademetro://auth/callback` por padrão).
 
 ### 3. Inicializar e Popular o Banco
 

@@ -2,12 +2,13 @@ import { apiClient, API_BASE_URL } from './client';
 import { LoginInput, RegisterInput } from './schemas';
 import { RegisterResponseDto, TokenResponseDto, UserDto } from './types';
 
-export function parseGoogleOAuthError(errorCode?: string | null): string {
-  if (!errorCode) {
+export function parseGoogleOAuthError(errorCode?: string | string[] | null): string {
+  const raw = Array.isArray(errorCode) ? errorCode[0] : errorCode;
+  if (!raw) {
     return 'Falha na autenticação com o Google. Tente novamente.';
   }
 
-  const normalized = errorCode.toLowerCase();
+  const normalized = String(raw).toLowerCase();
   if (normalized.includes('access_denied')) {
     return 'Acesso cancelado ou não autorizado pelo Google.';
   }
@@ -17,11 +18,17 @@ export function parseGoogleOAuthError(errorCode?: string | null): string {
   if (normalized.includes('suspended')) {
     return 'Esta conta está suspensa.';
   }
+  if (normalized.includes('email_unverified') || normalized.includes('not verified')) {
+    return 'O e-mail do Google não está verificado.';
+  }
   if (normalized.includes('email') || normalized.includes('conflict')) {
     return 'Este e-mail já está vinculado a outra conta.';
   }
+  if (normalized.includes('google_unavailable')) {
+    return 'O Google está indisponível no momento. Tente novamente.';
+  }
 
-  return `Erro ao autenticar com o Google (${errorCode}). Tente novamente.`;
+  return `Erro ao autenticar com o Google (${raw}). Tente novamente.`;
 }
 
 export const authApi = {

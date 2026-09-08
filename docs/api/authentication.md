@@ -87,19 +87,24 @@ Responses:
 
 Public. Inicia o login com Google. Redireciona (302) para a tela de autorização do Google.
 
+- Query opcional: `returnUrl` (deep link de callback do app). Só `cademetro://auth/callback`,
+  `exp://…/auth/callback` e `http(s)://localhost|127.0.0.1/auth/callback` são aceitos.
 - Redireciona para `https://accounts.google.com/o/oauth2/v2/auth` com `client_id`, `redirect_uri`,
-  `scope=openid email profile` e um `state` aleatório (armazenado em cookie HttpOnly).
+  `scope=openid email profile` e um `state` HMAC (payload assinado com `JWT_SECRET`, TTL 10 min;
+  inclui `returnUrl` quando válido). Sem cookies.
 - `503` — Google sign-in não configurado (`GOOGLE_CLIENT_ID`/`GOOGLE_CALLBACK_URL` ausentes).
 
 ## `GET /auth/google/callback`
 
 Public. Callback OAuth (redirect URI configurada no console do Google).
 
-- Valida o `state` (cookie) e troca o `code` por tokens com o Google.
+- Valida a assinatura e o expiry do `state` e troca o `code` por tokens com o Google.
 - Faz upsert do usuário por `googleId`; se não existir, vincula por e-mail verificado ou cria conta
   nova (sem senha).
-- Sucesso: redireciona (302) para `OAUTH_REDIRECT_URL?accessToken=...&refreshToken=...`.
-- Falha: redireciona para `OAUTH_REDIRECT_URL?error=<motivo>`.
+- Sucesso: redireciona (302) para `returnUrl` do state (ou `OAUTH_REDIRECT_URL`) com
+  `accessToken` e `refreshToken` na query.
+- Falha: redireciona com `error=<motivo>` (`invalid_state`, `access_denied`, `account_suspended`,
+  `email_unverified`, `email_in_use`, `google_unavailable`, ou o `error` devolvido pelo Google).
 - Conta criada via Google não permite login por senha (`passwordHash` nulo → `401` no `POST /auth/login`).
 
 ## `GET /auth/me`

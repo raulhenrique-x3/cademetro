@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   ConflictException,
   UnauthorizedException,
   ForbiddenException,
@@ -50,6 +51,8 @@ function parseDuration(value: string): number {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
@@ -220,9 +223,14 @@ export class AuthService {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {
+      const errorBody = await response.text().catch(() => '');
+      this.logger.warn(
+        `Google token exchange failed: ${response.status} ${errorBody.slice(0, 300)}`,
+      );
       throw new BadGatewayException('Failed to exchange OAuth code with Google');
     }
 
@@ -237,6 +245,7 @@ export class AuthService {
   private async fetchGoogleProfile(accessToken: string): Promise<GoogleProfile> {
     const response = await fetch(GOOGLE_USERINFO_ENDPOINT, {
       headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {
