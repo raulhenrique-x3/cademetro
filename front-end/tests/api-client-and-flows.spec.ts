@@ -149,6 +149,10 @@ describe('API Client, Error Normalization & Backend Integration', () => {
       const me = await authApi.getMe();
       expect(me.email).toBe(testEmail);
       expect(me.trustScore).toBeDefined();
+
+      // Delete account (LGPD & Google Play account deletion compliance)
+      const deleteRes = await authApi.deleteAccount();
+      expect(deleteRes.message).toContain('sucesso');
     });
 
     it('rejects invalid credentials with 401 error response', async () => {

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   ShieldAlert,
@@ -7,6 +7,8 @@ import {
   Monitor,
   Sun,
   Moon,
+  Trash2,
+  Shield,
 } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/screen-shell';
 import { useAuth } from '@/features/auth/auth-context';
@@ -21,10 +23,44 @@ import { useTheme } from '@/hooks/use-theme';
 export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, deleteAccount } = useAuth();
   const { themeMode, setThemeMode, colorScheme } = useAppTheme();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isModerator = user?.role === 'MODERATOR' || user?.role === 'ADMIN';
+
+  const confirmDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteAccount();
+      Alert.alert(
+        'Conta excluída',
+        'Sua conta e seus dados foram excluídos com sucesso.',
+      );
+    } catch (err: any) {
+      Alert.alert(
+        'Erro ao excluir conta',
+        err?.message || 'Não foi possível excluir a conta. Tente novamente mais tarde.',
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Excluir Conta Permanentemente',
+      'Tem certeza de que deseja excluir sua conta? Todos os seus dados, pontuação e histórico serão apagados permanentemente de acordo com as normas da LGPD. Esta ação não poderá ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir definitivamente',
+          style: 'destructive',
+          onPress: confirmDeleteAccount,
+        },
+      ],
+    );
+  };
 
   return (
     <ScreenShell>
@@ -129,6 +165,19 @@ export default function ProfileScreen() {
           >
             Sair da conta
           </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleDeleteAccount}
+            loading={isDeleting}
+            icon={<Trash2 size={15} color={theme.destructive} />}
+            style={styles.deleteBtn}
+          >
+            <Text style={[styles.deleteBtnText, { color: theme.destructive }]}>
+              Excluir minha conta
+            </Text>
+          </Button>
         </View>
       ) : (
         /* Guest auth form */
@@ -207,6 +256,18 @@ export default function ProfileScreen() {
 
       {/* App Info Card */}
       <View style={styles.appInfo}>
+        <Pressable
+          onPress={() => router.push('/privacy')}
+          style={styles.privacyLink}
+          accessibilityRole="link"
+          accessibilityLabel="Política de Privacidade e Exclusão de Dados"
+        >
+          <Shield size={14} color={theme.primary} />
+          <Text style={[styles.privacyLinkText, { color: theme.primary }]}>
+            Política de Privacidade e Exclusão de Dados
+          </Text>
+        </Pressable>
+
         <Text style={[styles.appVersion, { color: theme.mutedForeground }]}>
           CadêMetrô • Versão 1.0.0 (MVP)
         </Text>
@@ -344,5 +405,25 @@ const styles = StyleSheet.create({
   appDisclaimer: {
     fontSize: Typography.small.fontSize,
     textAlign: 'center',
+  },
+  deleteBtn: {
+    marginTop: Spacing.two,
+    alignSelf: 'center',
+  },
+  deleteBtnText: {
+    fontSize: Typography.caption.fontSize,
+  },
+  privacyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    marginBottom: Spacing.one,
+  },
+  privacyLinkText: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

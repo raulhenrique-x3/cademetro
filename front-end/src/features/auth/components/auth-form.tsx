@@ -11,6 +11,7 @@ import { extractErrorMessage } from '@/lib/error-parser';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
+import { GoogleIcon } from '@/components/ui/google-icon';
 
 export interface AuthFormProps {
   initialMode?: 'login' | 'register';
@@ -20,8 +21,8 @@ export interface AuthFormProps {
 export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
   const theme = useTheme();
   const router = useRouter();
-  const { login, register } = useAuth();
-  const { showError } = useToast();
+  const { login, register, loginWithGoogle } = useAuth();
+  const { showError, showSuccess } = useToast();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [email, setEmail] = useState('');
@@ -33,6 +34,32 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    Keyboard.dismiss();
+    setServerError(null);
+    setFormErrors({});
+    setIsGoogleSubmitting(true);
+
+    try {
+      const loggedUser = await loginWithGoogle();
+      if (loggedUser) {
+        showSuccess('Login com Google realizado com sucesso!');
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.replace('/');
+        }
+      }
+    } catch (err: any) {
+      showError(err);
+      const friendlyMessage = extractErrorMessage(err);
+      setServerError(friendlyMessage || 'Falha ao autenticar com o Google. Tente novamente.');
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
 
   const handleSubmit = async () => {
     Keyboard.dismiss();
@@ -160,6 +187,27 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
           : 'Crie seu cadastro gratuito em poucos segundos.'}
       </Text>
 
+      {/* Google Sign-In */}
+      <Button
+        variant="outline"
+        size="lg"
+        loading={isGoogleSubmitting}
+        disabled={isSubmitting || isGoogleSubmitting}
+        icon={<GoogleIcon size={18} />}
+        onPress={handleGoogleLogin}
+        style={styles.googleBtn}>
+        {mode === 'login' ? 'Continuar com o Google' : 'Cadastrar com o Google'}
+      </Button>
+
+      {/* Divider */}
+      <View style={styles.dividerRow}>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+        <Text style={[styles.dividerText, { color: theme.mutedForeground }]}>
+          ou continue com email
+        </Text>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+      </View>
+
       {mode === 'register' && (
         <>
           <Input
@@ -225,6 +273,7 @@ export function AuthForm({ initialMode = 'login', onSuccess }: AuthFormProps) {
       <Button
         size="lg"
         loading={isSubmitting}
+        disabled={isSubmitting || isGoogleSubmitting}
         onPress={handleSubmit}
         style={styles.submitBtn}>
         {mode === 'login' ? 'Entrar' : 'Concluir cadastro'}
@@ -265,6 +314,23 @@ const styles = StyleSheet.create({
     fontSize: Typography.body.fontSize,
     marginTop: Spacing.half,
     marginBottom: Spacing.three,
+  },
+  googleBtn: {
+    width: '100%',
+    marginBottom: Spacing.three,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.three,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    paddingHorizontal: Spacing.two,
+    fontSize: Typography.caption.fontSize,
   },
   errorWrapper: {
     marginTop: Spacing.two,
