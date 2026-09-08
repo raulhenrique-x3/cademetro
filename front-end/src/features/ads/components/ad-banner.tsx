@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 import { getAdsConfig, getBannerAdUnitId } from '../ads-config';
+import { getGoogleMobileAds, isGoogleMobileAdsAvailable, SafeBannerAdSize } from '../ads-native';
 import { AdPlacement } from '../types';
 
 export interface AdBannerProps {
@@ -16,11 +16,19 @@ export function AdBanner({ placement, style }: AdBannerProps) {
   const config = getAdsConfig();
   const [hasError, setHasError] = useState(false);
 
-  // Se anúncios ou banners estiverem desativados, ou se houver falha de preenchimento, não renderiza nada
-  if (!config.enabled || !config.bannersEnabled || hasError) {
+  // Se o módulo nativo não existir (Expo Go/Web), anúncios estiverem desativados ou erro de carregamento: esconde
+  if (!isGoogleMobileAdsAvailable() || !config.enabled || !config.bannersEnabled || hasError) {
     return null;
   }
 
+  const adsModule = getGoogleMobileAds();
+  if (!adsModule || !adsModule.BannerAd) {
+    return null;
+  }
+
+  const BannerAd = adsModule.BannerAd;
+  const bannerSize =
+    adsModule.BannerAdSize?.ANCHORED_ADAPTIVE_BANNER || SafeBannerAdSize.ANCHORED_ADAPTIVE_BANNER;
   const adUnitId = getBannerAdUnitId();
 
   return (
@@ -46,7 +54,7 @@ export function AdBanner({ placement, style }: AdBannerProps) {
       <View style={styles.adWrapper}>
         <BannerAd
           unitId={adUnitId}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          size={bannerSize}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
           }}
