@@ -51,9 +51,12 @@ Construído com **NestJS 12**, **Prisma Next** (`@prisma/orm-postgres`), **Postg
 
 ### 1. Iniciar com Docker Compose (Banco + API)
 
-Na raiz do repositório:
+A configuração Docker e o `.env` vivem **nesta pasta** (`back-end/`). O `docker compose` lê o
+`back-end/.env` automaticamente — não existem `.env`/`docker-compose.yml` na raiz do repositório.
 
 ```bash
+cd back-end
+
 # Sobe o banco PostgreSQL 16 (porta 5434) e a API (porta 8006)
 docker compose up -d
 
@@ -66,11 +69,14 @@ docker compose down
 
 ### 2. Configurar Variáveis de Ambiente
 
-Arquivo `back-end/.env`:
+Arquivo `back-end/.env` (única fonte de variáveis de ambiente):
 
 ```env
-DATABASE_URL="postgresql://cademetro:cademetro@localhost:5434/cademetro"
+DATABASE_URL="postgresql://cademetro:cademetro@db:5432/cademetro"
 DATABASE_URL_TEST="postgresql://cademetro:cademetro@localhost:5434/cademetro_test"
+POSTGRES_USER="cademetro"
+POSTGRES_PASSWORD="cademetro"
+POSTGRES_DB="cademetro"
 JWT_SECRET="dev-jwt-secret-cademetro-2026"
 PORT=8006
 CORS_ORIGIN="*"
@@ -82,10 +88,13 @@ GOOGLE_CALLBACK_URL="https://SEU_DOMINIO.ngrok-free.app/auth/google/callback"
 OAUTH_REDIRECT_URL="cademetro://auth/callback"
 ```
 
-> **Google OAuth**: a `redirect_uri` registrada no console do Google deve ser a URL pública do
-> backend + `/auth/google/callback` (ex: `https://SEU_DOMINIO.ngrok-free.app/auth/google/callback`).
-> Após o login, o backend redireciona para `OAUTH_REDIRECT_URL` com `accessToken` e `refreshToken`
-> na query string (deep link `cademetro://` por padrão).
+> **Docker**: `DATABASE_URL` usa o host `db` (porta 5432) dentro da rede do compose. Para rodar o
+> backend direto na máquina host (fora do Docker), troque o host para `localhost:5434`.
+>
+> **Google OAuth**: a `redirect_uri` registrada no console do Google deve ser exatamente a
+> `GOOGLE_CALLBACK_URL` (URL pública do backend + `/auth/google/callback`). Após o login, o backend
+> redireciona para `OAUTH_REDIRECT_URL` com `accessToken` e `refreshToken` na query string
+> (deep link `cademetro://` por padrão).
 
 ### 3. Inicializar e Popular o Banco
 

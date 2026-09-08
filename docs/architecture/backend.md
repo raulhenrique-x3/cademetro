@@ -74,7 +74,7 @@ Validation and rate limiting **reuse the installed libs**: `joi` for DTO validat
 
 ## Local development (Docker)
 
-The backend and PostgreSQL run in Docker. A `docker-compose.yml` at the repo root defines:
+The backend and PostgreSQL run in Docker. A `docker-compose.yml` inside `back-end/` defines:
 
 | Service | Image                                              | Host port | Notes                                                                                  |
 | ------- | -------------------------------------------------- | --------- | -------------------------------------------------------------------------------------- |

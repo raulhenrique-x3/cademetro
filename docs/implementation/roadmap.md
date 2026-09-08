@@ -25,7 +25,7 @@ Phase 10 — MVP hardening
 - Wire Swagger at `/docs`; global error filter + uniform error shape; CORS; helmet; rate limiting
   via the installed `express-rate-limit`.
 - **Dependencies**: none (starts from existing scaffold).
-- **Affected**: `main.ts`, `app.module.ts`, new `src/shared/`, `docker-compose.yml`, `back-end/Dockerfile`.
+- **Affected**: `main.ts`, `app.module.ts`, new `src/shared/`, `back-end/docker-compose.yml`, `back-end/Dockerfile`.
 - **Acceptance**: app boots; Swagger serves; unknown-field payloads → 400; no internal error leak;
   Postgres and backend run via Docker Compose (DB on host port 5434).
 

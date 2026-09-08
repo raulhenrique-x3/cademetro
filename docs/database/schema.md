@@ -8,9 +8,10 @@ npx prisma contract emit     # regenerate contract.json + contract.d.ts
 npx prisma db init           # create tables
 ```
 
-**Local setup:** the app's PostgreSQL runs in Docker (`docker compose up db`), exposed on host port
-**5434**. `back-end/.env`'s `DATABASE_URL` points to `localhost:5434` when run from the host, and to
-the `db` service (port `5432`) from inside the `api` container. See `architecture/backend.md`.
+**Local setup:** the app's PostgreSQL runs in Docker (`docker compose up db` from `back-end/`),
+exposed on host port **5434**. `back-end/.env`'s `DATABASE_URL` points to the `db` service
+(port `5432`) inside the compose network; for host-side runs, override it to `localhost:5434`.
+See `architecture/backend.md`.
 
 **Naming:** Prisma Next maps model fields to columns preserving the field name as written in the
 contract (camelCase), and table names to lowercase model names (see the generated `contract.d.ts`

@@ -37,8 +37,9 @@ Legend used across docs: **EXISTING** = already in repo · **PLANNED** = designe
    for the MVP. See `api/authentication.md` and `security/overview.md`.
 6. **SSE, not WebSockets.** Real-time via `GET /events` (Server-Sent Events). Single-process
    in-memory RxJS `Subject` as event bus — no Redis/message broker. See `architecture/realtime.md`.
-7. **Backend and PostgreSQL run in Docker.** `docker compose up` starts both; the Postgres container
-   is exposed on host port **5434**. See `architecture/backend.md` and `implementation/roadmap.md`.
+7. **Backend and PostgreSQL run in Docker.** `docker compose up` (from `back-end/`, the single
+   source of `.env` and `docker-compose.yml`) starts both; the Postgres container is exposed on
+   host port **5434**. See `architecture/backend.md` and `implementation/roadmap.md`.
 
 ## Document index
 

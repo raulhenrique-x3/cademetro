@@ -18,8 +18,8 @@ phase (see `implementation/roadmap.md`). This is the executable work queue for a
 - **T1.5** CORS + helmet.
   - Deps: — · Area: `src/main.ts` · AC: configured origin works; security headers present.
 - **T1.6** Docker Compose: `db` (PostgreSQL ≥ 15, host port **5434**) + `api` (backend container).
-  - Deps: — · Area: `docker-compose.yml` at repo root, `back-end/Dockerfile` · AC: `docker compose
-    up` boots DB + API; backend connects to Postgres; `down` cleans up.
+  - Deps: — · Area: `back-end/docker-compose.yml`, `back-end/Dockerfile` · AC: `docker compose
+    up` (from `back-end/`) boots DB + API; backend connects to Postgres; `down` cleans up.
 
 ## Phase 2 — Database / domain model
 
