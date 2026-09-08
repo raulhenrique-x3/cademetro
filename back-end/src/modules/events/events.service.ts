@@ -1,5 +1,5 @@
 import { Injectable, MessageEvent } from '@nestjs/common';
-import { Subject, Observable, merge, interval } from 'rxjs';
+import { Subject, Observable, merge, timer } from 'rxjs';
 import { map, filter } from 'rxjs/operators';
 
 export interface MetroEvent {
@@ -45,8 +45,8 @@ export class EventsService {
       } as MessageEvent)),
     );
 
-    // Heartbeat ping every 30 seconds
-    const heartbeat$ = interval(30000).pipe(
+    // Heartbeat ping after 1s then every 15 seconds to prevent proxy/ngrok/carrier timeouts
+    const heartbeat$ = timer(1000, 15000).pipe(
       map(() => ({
         type: 'ping',
         data: { timestamp: new Date().toISOString() },

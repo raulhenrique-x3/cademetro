@@ -178,9 +178,11 @@ export class AuthService {
     return OAUTH_REDIRECT_URL;
   }
 
-  buildOauthErrorUrl(message: string): string {
+  buildOauthErrorUrl(message: string, baseRedirectUrl?: string): string {
+    const base = baseRedirectUrl || OAUTH_REDIRECT_URL;
     const params = new URLSearchParams({ error: message });
-    return `${OAUTH_REDIRECT_URL}?${params.toString()}`;
+    const separator = base.includes('?') ? '&' : '?';
+    return `${base}${separator}${params.toString()}`;
   }
 
   async signInWithGoogle(code: string): Promise<TokenResponseDto> {
@@ -342,6 +344,33 @@ export class AuthService {
     await db.orm.public.RefreshToken.where({ id }).update({
       revokedAt: new Date().toISOString(),
     });
+  }
+
+  async deleteAccount(userId: number): Promise<{ message: string }> {
+    const user = await db.orm.public.User.where({ id: userId }).first();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // 1. Delete refresh tokens
+    await db.orm.public.RefreshToken.where({ userId }).delete();
+
+    // 2. Delete confirmations made by this user
+    await db.orm.public.ReportConfirmation.where({ userId }).delete();
+
+    // 3. Delete confirmations on reports authored by this user
+    const reports = await db.orm.public.Report.where({ authorId: userId }).all();
+    for (const report of reports) {
+      await db.orm.public.ReportConfirmation.where({ reportId: report.id }).delete();
+    }
+
+    // 4. Delete reports authored by this user
+    await db.orm.public.Report.where({ authorId: userId }).delete();
+
+    // 5. Delete the user
+    await db.orm.public.User.where({ id: userId }).delete();
+
+    return { message: 'Conta excluída com sucesso' };
   }
 
   private hashToken(rawToken: string): string {

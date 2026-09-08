@@ -31,11 +31,17 @@ async function bootstrap() {
   });
 
   // Rate Limiting
-  // 1. Global default: 120 requests/minute
+  // 1. Global default: 300 requests/minute (configurable via RATE_LIMIT_GLOBAL_MAX; skips streaming /events and docs)
+  const globalRateLimit = Number(process.env.RATE_LIMIT_GLOBAL_MAX) || 300;
   app.use(
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 120,
+      limit: globalRateLimit,
+      skip: (req) =>
+        req.path === '/events' ||
+        req.path.startsWith('/events') ||
+        req.path === '/docs' ||
+        req.path.startsWith('/docs'),
       standardHeaders: true,
       legacyHeaders: false,
       message: {

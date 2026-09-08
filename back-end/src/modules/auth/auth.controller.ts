@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Query,
   Req,
@@ -76,11 +77,25 @@ export class AuthController {
     return this.authService.getMe(user);
   }
 
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete current user account and personal data' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteAccount(@CurrentUser() user: any): Promise<{ message: string }> {
+    return this.authService.deleteAccount(user.id);
+  }
+
   @Get('google')
   @ApiOperation({ summary: 'Start Google OAuth sign-in (redirects to Google)' })
   @ApiResponse({ status: 302, description: 'Redirects to Google authorization' })
   @ApiResponse({ status: 503, description: 'Google sign-in not configured' })
-  google(@Res() res: Response): void {
+  google(
+    @Res() res: Response,
+    @Query('returnUrl') returnUrl?: string,
+  ): void {
     const state = randomBytes(24).toString('hex');
 
     res.cookie('google_oauth_state', state, {
@@ -90,6 +105,16 @@ export class AuthController {
       maxAge: 10 * 60 * 1000,
       path: '/auth/google',
     });
+
+    if (returnUrl && isValidRedirectUrl(returnUrl)) {
+      res.cookie('google_oauth_return_url', returnUrl, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false,
+        maxAge: 10 * 60 * 1000,
+        path: '/auth/google',
+      });
+    }
 
     res.redirect(this.authService.buildGoogleAuthUrl(state));
   }
@@ -104,11 +129,18 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
+    const returnUrlCookie = parseCookie(req.headers.cookie, 'google_oauth_return_url');
+    const targetUrl =
+      returnUrlCookie && isValidRedirectUrl(returnUrlCookie)
+        ? returnUrlCookie
+        : this.authService.oauthRedirectUrl;
+
     res.clearCookie('google_oauth_state', { path: '/auth/google' });
+    res.clearCookie('google_oauth_return_url', { path: '/auth/google' });
 
     const expectedState = parseCookie(req.headers.cookie, 'google_oauth_state');
     if (!code || !state || !expectedState || !safeStateEqual(state, expectedState)) {
-      res.redirect(this.authService.buildOauthErrorUrl('invalid_state'));
+      res.redirect(this.authService.buildOauthErrorUrl('invalid_state', targetUrl));
       return;
     }
 
@@ -118,9 +150,10 @@ export class AuthController {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       });
-      res.redirect(`${this.authService.oauthRedirectUrl}?${params.toString()}`);
+      const separator = targetUrl.includes('?') ? '&' : '?';
+      res.redirect(`${targetUrl}${separator}${params.toString()}`);
     } catch {
-      res.redirect(this.authService.buildOauthErrorUrl('access_denied'));
+      res.redirect(this.authService.buildOauthErrorUrl('access_denied', targetUrl));
     }
   }
 }
@@ -145,4 +178,16 @@ function safeStateEqual(a: string, b: string): boolean {
     return false;
   }
   return timingSafeEqual(bufA, bufB);
+}
+
+function isValidRedirectUrl(url: string): boolean {
+  if (url.startsWith('cademetro://')) {
+    return true;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }

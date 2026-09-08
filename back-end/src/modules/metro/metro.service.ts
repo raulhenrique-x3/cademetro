@@ -241,12 +241,14 @@ export class MetroService {
       .where({ stationId })
       .all();
 
+    const seenLineIds = new Set<number>();
     const linesInfo = [];
     for (const bs of branchStations) {
       const branch = await db.orm.public.Branch.where({ id: bs.branchId }).first();
       if (!branch) continue;
       const line = await db.orm.public.Line.where({ id: branch.lineId }).first();
-      if (line) {
+      if (line && !seenLineIds.has(line.id)) {
+        seenLineIds.add(line.id);
         linesInfo.push({
           id: line.id,
           name: line.name,
