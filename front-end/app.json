@@ -57,6 +57,14 @@
         {
           "locationWhenInUsePermission": "O Cadê Metrô precisa da sua localização para identificar a estação de metrô mais próxima e validar relatos."
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458602516",
+          "userTrackingUsageDescription": "Essa permissão é utilizada para fornecer anúncios mais relevantes aos passageiros."
+        }
       ]
     ],
     "experiments": {

@@ -12,6 +12,7 @@ import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLocation } from '@/hooks/use-location';
 import { calculateDistanceMeters, formatDistance, sortStationsByDistance } from '@/lib/location';
+import { AdBanner } from '@/features/ads';
 
 export default function ExploreScreen() {
   const theme = useTheme();
@@ -197,7 +198,7 @@ export default function ExploreScreen() {
         />
       ) : (
         <View style={styles.stationsList}>
-          {displayedStations.map((station) => {
+          {displayedStations.map((station, index) => {
             const dist = coords
               ? calculateDistanceMeters(
                   coords.latitude,
@@ -210,68 +211,82 @@ export default function ExploreScreen() {
               dist !== null && isFinite(dist) ? formatDistance(dist) : null;
 
             return (
-              <Pressable
-                key={station.id}
-                onPress={() => router.push(`/station/${station.id}`)}
-                style={({ pressed }) => [
-                  styles.stationCard,
-                  {
-                    backgroundColor: theme.card,
-                    borderColor: theme.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                  Shadows.card,
-                ]}
-              >
-                <View style={styles.stationMain}>
-                  <MapPin size={18} color={theme.primary} />
-                  <View>
-                    <View style={styles.stationNameRow}>
-                      <Text style={[styles.stationName, { color: theme.text }]}>
-                        {station.name}
-                      </Text>
-                      {formattedDist && (
+              <React.Fragment key={station.id}>
+                <Pressable
+                  onPress={() => router.push(`/station/${station.id}`)}
+                  style={({ pressed }) => [
+                    styles.stationCard,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                    Shadows.card,
+                  ]}
+                >
+                  <View style={styles.stationMain}>
+                    <MapPin size={18} color={theme.primary} />
+                    <View>
+                      <View style={styles.stationNameRow}>
+                        <Text style={[styles.stationName, { color: theme.text }]}>
+                          {station.name}
+                        </Text>
+                        {formattedDist && (
+                          <Text
+                            style={[
+                              styles.stationDistanceBadge,
+                              { color: theme.primary },
+                            ]}
+                          >
+                            {`• ${formattedDist}`}
+                          </Text>
+                        )}
+                      </View>
+                      {station.code && (
                         <Text
                           style={[
-                            styles.stationDistanceBadge,
-                            { color: theme.primary },
+                            styles.stationCode,
+                            { color: theme.mutedForeground },
                           ]}
                         >
-                          {`• ${formattedDist}`}
+                          {station.code}
                         </Text>
                       )}
                     </View>
-                    {station.code && (
-                      <Text
-                        style={[
-                          styles.stationCode,
-                          { color: theme.mutedForeground },
-                        ]}
-                      >
-                        {station.code}
-                      </Text>
-                    )}
                   </View>
-                </View>
 
-                <View style={styles.linesBadges}>
-                  {station.lines?.map((l, index) => (
-                    <View
-                      key={`${station.id}-${l.id}-${index}`}
-                      style={[styles.linePill, { backgroundColor: l.color }]}
-                    >
-                      <Text style={styles.linePillText}>
-                        {l.code.split('-')[0]}
-                      </Text>
-                    </View>
-                  ))}
-                  <Text style={[styles.arrow, { color: theme.mutedForeground }]}>
-                    ›
-                  </Text>
-                </View>
-              </Pressable>
+                  <View style={styles.linesBadges}>
+                    {station.lines?.map((l, lIdx) => (
+                      <View
+                        key={`${station.id}-${l.id}-${lIdx}`}
+                        style={[styles.linePill, { backgroundColor: l.color }]}
+                      >
+                        <Text style={styles.linePillText}>
+                          {l.code.split('-')[0]}
+                        </Text>
+                      </View>
+                    ))}
+                    <Text style={[styles.arrow, { color: theme.mutedForeground }]}>
+                      ›
+                    </Text>
+                  </View>
+                </Pressable>
+
+                {index === 3 && (
+                  <AdBanner
+                    placement="explore_list"
+                    style={styles.inlineAdBanner}
+                  />
+                )}
+              </React.Fragment>
             );
           })}
+          {displayedStations.length > 0 && displayedStations.length < 4 && (
+            <AdBanner
+              placement="explore_list"
+              style={styles.inlineAdBanner}
+            />
+          )}
         </View>
       )}
     </ScreenShell>
@@ -382,5 +397,8 @@ const styles = StyleSheet.create({
   },
   loadingStack: {
     gap: Spacing.two,
+  },
+  inlineAdBanner: {
+    marginVertical: Spacing.two,
   },
 });

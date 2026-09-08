@@ -16,6 +16,7 @@ import { Radius, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useRealtime } from '@/hooks/use-realtime';
 import { useLocation } from '@/hooks/use-location';
+import { AdBanner } from '@/features/ads';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -258,6 +259,9 @@ export default function HomeScreen() {
         </View>
       )}
 
+      {/* Publicidade AdMob Nativa Inline */}
+      <AdBanner placement="home_feed" style={styles.adBanner} />
+
       {/* 3. Recent Train Activity Feed */}
       <View style={[styles.sectionHeader, { marginTop: Spacing.four }]}>
         <View style={styles.recentReportsHeaderRow}>
@@ -440,5 +444,9 @@ const styles = StyleSheet.create({
   nearestActionText: {
     fontSize: Typography.caption.fontSize,
     fontWeight: '600',
+  },
+  adBanner: {
+    marginTop: Spacing.three,
+    marginBottom: Spacing.one,
   },
 });

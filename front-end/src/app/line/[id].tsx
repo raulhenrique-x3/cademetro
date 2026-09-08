@@ -16,6 +16,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatTimeAgo } from '@/lib/date';
+import { AdBanner } from '@/features/ads';
 
 export default function LineDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -148,6 +149,9 @@ export default function LineDetailScreen() {
         </View>
       )}
 
+      {/* AdMob Banner Nativo Inline */}
+      <AdBanner placement="line_detail" style={styles.adBanner} />
+
       {/* Reports on this line */}
       <View style={styles.reportsSection}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -246,5 +250,8 @@ const styles = StyleSheet.create({
   },
   loadingStack: {
     gap: Spacing.two,
+  },
+  adBanner: {
+    marginVertical: Spacing.three,
   },
 });

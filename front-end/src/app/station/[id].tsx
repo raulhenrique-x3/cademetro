@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatTimeAgo } from '@/lib/date';
 import { useLocation } from '@/hooks/use-location';
 import { calculateDistanceMeters, formatDistance } from '@/lib/location';
+import { AdBanner } from '@/features/ads';
 
 export default function StationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -188,6 +189,9 @@ export default function StationDetailScreen() {
         </View>
       </View>
 
+      {/* AdMob Banner Nativo Inline */}
+      <AdBanner placement="station_detail" style={styles.adBanner} />
+
       {/* Recent reports at this station */}
       <View style={styles.reportsSection}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -314,5 +318,8 @@ const styles = StyleSheet.create({
   },
   loadingStack: {
     gap: Spacing.two,
+  },
+  adBanner: {
+    marginBottom: Spacing.three,
   },
 });

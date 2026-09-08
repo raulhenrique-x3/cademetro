@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { AuthForm } from '@/features/auth/components/auth-form';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { AdBanner } from '@/features/ads';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -254,6 +255,9 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* AdMob Banner Nativo */}
+      <AdBanner placement="profile_bottom" style={styles.adBanner} />
+
       {/* App Info Card */}
       <View style={styles.appInfo}>
         <Pressable
@@ -425,5 +429,8 @@ const styles = StyleSheet.create({
     fontSize: Typography.caption.fontSize,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  adBanner: {
+    marginTop: Spacing.three,
   },
 });

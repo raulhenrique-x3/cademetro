@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+import { useEffect } from 'react';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { queryClient } from '@/lib/query-client';
 import { ThemeContextProvider, useAppTheme } from '@/context/theme-context';
@@ -12,6 +13,7 @@ import { AuthProvider } from '@/features/auth/auth-context';
 import { ToastProvider } from '@/context/toast-context';
 import { ToastContainer } from '@/components/ui/toast';
 import { RealtimeProvider } from '@/context/realtime-context';
+import { initializeAds } from '@/features/ads';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -19,6 +21,10 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { colorScheme } = useAppTheme();
+
+  useEffect(() => {
+    initializeAds().catch(() => {});
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
