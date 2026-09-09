@@ -54,21 +54,28 @@ export async function seed() {
     { name: 'Recife', code: 'REC', latitude: -8.0632, longitude: -34.8712 },
     { name: 'Joana Bezerra', code: 'JBZ', latitude: -8.0597, longitude: -34.8877 },
 
-    // Linha Centro – Ramal Jaboatão
+    // Linha Centro – Trecho comum (Recife → Coqueiral)
     { name: 'Afogados', code: 'AFO', latitude: -8.0485, longitude: -34.9034 },
-    { name: 'Werneck', code: 'WER', latitude: -8.0427, longitude: -34.9113 },
+    { name: 'Ipiranga', code: 'IPI', latitude: -8.0458, longitude: -34.9083 },
+    { name: 'Mangueira', code: 'MNG', latitude: -8.0416, longitude: -34.9142 },
     { name: 'Santa Luzia', code: 'SLZ', latitude: -8.0365, longitude: -34.9211 },
-    { name: 'Cavaleiro', code: 'CAV', latitude: -8.0310, longitude: -34.9330 },
-    { name: 'Floriano', code: 'FLO', latitude: -8.0280, longitude: -34.9450 },
-    { name: 'Engenho Velho', code: 'EVL', latitude: -8.0260, longitude: -34.9590 },
-    { name: 'Jaboatão', code: 'JAB', latitude: -8.0245, longitude: -34.9710 },
+    { name: 'Werneck', code: 'WER', latitude: -8.0318, longitude: -34.9258 },
+    { name: 'Barro', code: 'BAR', latitude: -8.0290, longitude: -34.9310 },
+    { name: 'Tejipió', code: 'TEJ', latitude: -8.0271, longitude: -34.9366 },
+    { name: 'Coqueiral', code: 'COQ', latitude: -8.0380, longitude: -34.9280 },
 
     // Linha Centro – Ramal Camaragibe
-    { name: 'Coqueiral', code: 'COQ', latitude: -8.0380, longitude: -34.9280 },
+    { name: 'Alto do Céu', code: 'ALT', latitude: -8.0368, longitude: -34.9320 },
     { name: 'Curado', code: 'CUR', latitude: -8.0350, longitude: -34.9360 },
     { name: 'Rodoviária', code: 'ROD', latitude: -8.0340, longitude: -34.9440 },
     { name: 'Cosme e Damião', code: 'CMD', latitude: -8.0330, longitude: -34.9520 },
     { name: 'Camaragibe', code: 'CAM', latitude: -8.0225, longitude: -34.9640 },
+
+    // Linha Centro – Ramal Jaboatão
+    { name: 'Cavaleiro', code: 'CAV', latitude: -8.0310, longitude: -34.9330 },
+    { name: 'Floriano', code: 'FLO', latitude: -8.0280, longitude: -34.9450 },
+    { name: 'Engenho Velho', code: 'EVL', latitude: -8.0260, longitude: -34.9590 },
+    { name: 'Jaboatão', code: 'JAB', latitude: -8.0245, longitude: -34.9710 },
 
     // Linha Sul
     { name: 'Largo da Paz', code: 'LDP', latitude: -8.0610, longitude: -34.8920 },
@@ -123,7 +130,8 @@ export async function seed() {
           name: 'Ramal Jaboatão',
           code: 'jaboatao',
           stations: [
-            'Recife', 'Joana Bezerra', 'Afogados', 'Werneck', 'Santa Luzia',
+            'Recife', 'Joana Bezerra', 'Afogados', 'Ipiranga', 'Mangueira',
+            'Santa Luzia', 'Werneck', 'Barro', 'Tejipió', 'Coqueiral',
             'Cavaleiro', 'Floriano', 'Engenho Velho', 'Jaboatão',
           ],
         },
@@ -131,8 +139,9 @@ export async function seed() {
           name: 'Ramal Camaragibe',
           code: 'camaragibe',
           stations: [
-            'Recife', 'Joana Bezerra', 'Afogados', 'Werneck', 'Santa Luzia',
-            'Coqueiral', 'Curado', 'Rodoviária', 'Cosme e Damião', 'Camaragibe',
+            'Recife', 'Joana Bezerra', 'Afogados', 'Ipiranga', 'Mangueira',
+            'Santa Luzia', 'Werneck', 'Barro', 'Tejipió', 'Coqueiral',
+            'Alto do Céu', 'Curado', 'Rodoviária', 'Cosme e Damião', 'Camaragibe',
           ],
         },
       ],
