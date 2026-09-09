@@ -4,13 +4,17 @@ import {
   getBannerAdUnitId,
   getInterstitialAdUnitId,
   TEST_AD_UNITS,
+  PRODUCTION_AD_UNITS,
 } from '@/features/ads/ads-config';
 import {
+  initializeAds,
+  isGoogleMobileAdsAvailable,
+  getGoogleMobileAds,
   canShowInterstitial,
   recordInterstitialShown,
   resetSessionAdsTracking,
   getAdsSessionStats,
-} from '@/features/ads/ads-service';
+} from '@/features/ads';
 
 describe('AdMob Configuration and Frequency Capping', () => {
   const originalEnv = process.env;
@@ -69,11 +73,19 @@ describe('AdMob Configuration and Frequency Capping', () => {
       expect(getInterstitialAdUnitId('ios')).toBe('ca-app-pub-custom/444444');
     });
 
-    it('deve fazer fallback para IDs de teste se testMode for false mas variáveis de produção não estiverem definidas', () => {
+    it('deve fazer fallback para o bloco oficial de produção se testMode for false e variável customizada não estiver definida', () => {
       process.env.EXPO_PUBLIC_ADS_TEST_MODE = 'false';
       delete process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_ANDROID;
 
-      expect(getBannerAdUnitId('android')).toBe(TEST_AD_UNITS.banner.android);
+      expect(getBannerAdUnitId('android')).toBe(PRODUCTION_AD_UNITS.banner.android);
+      expect(getBannerAdUnitId('android')).toBe('ca-app-pub-3861308228006485/5630974858');
+    });
+
+    it('deve fazer fallback para IDs de teste em intersticiais se testMode for false mas sem unidade de produção configurada', () => {
+      process.env.EXPO_PUBLIC_ADS_TEST_MODE = 'false';
+      delete process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_ANDROID;
+
+      expect(getInterstitialAdUnitId('android')).toBe(TEST_AD_UNITS.interstitial.android);
     });
   });
 
@@ -155,6 +167,22 @@ describe('AdMob Configuration and Frequency Capping', () => {
       expect(getAdsSessionStats().interstitialsShownInSessionCount).toBe(0);
       expect(getAdsSessionStats().lastInterstitialShownTimestamp).toBe(0);
       expect(canShowInterstitial()).toBe(true);
+    });
+  });
+
+  describe('Native Ads Safety & Fallbacks (Expo Go & Web compatibility)', () => {
+    it('isGoogleMobileAdsAvailable deve retornar false quando não estiver em android/ios com suporte nativo', () => {
+      // No ambiente de teste vitest (Node/Web), não há TurboModule nativo
+      expect(isGoogleMobileAdsAvailable()).toBe(false);
+    });
+
+    it('getGoogleMobileAds deve retornar null de forma segura sem lançar exceção', () => {
+      expect(getGoogleMobileAds()).toBeNull();
+    });
+
+    it('initializeAds deve retornar false graciosamente sem lançar erro de TurboModule', async () => {
+      const result = await initializeAds();
+      expect(result).toBe(false);
     });
   });
 });

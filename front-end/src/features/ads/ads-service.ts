@@ -1,16 +1,16 @@
 import { Platform } from 'react-native';
-import mobileAds from 'react-native-google-mobile-ads';
 import { getAdsConfig } from './ads-config';
+import { getGoogleMobileAds, isGoogleMobileAdsAvailable } from './ads-native';
 
 let isInitialized = false;
 let lastInterstitialShownTimestamp = 0;
 let interstitialsShownInSessionCount = 0;
 
 /**
- * Inicializa o SDK nativo do Google Mobile Ads (apenas em iOS e Android)
+ * Inicializa o SDK nativo do Google Mobile Ads (apenas em iOS e Android com suporte nativo)
  */
 export async function initializeAds(): Promise<boolean> {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' || !isGoogleMobileAdsAvailable()) {
     return false;
   }
 
@@ -24,7 +24,11 @@ export async function initializeAds(): Promise<boolean> {
   }
 
   try {
-    await mobileAds().initialize();
+    const ads = getGoogleMobileAds();
+    if (!ads) {
+      return false;
+    }
+    await ads.default().initialize();
     isInitialized = true;
     return true;
   } catch (error) {

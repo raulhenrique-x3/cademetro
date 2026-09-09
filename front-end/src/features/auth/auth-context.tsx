@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dismissGoogleAuthSession();
     }, GOOGLE_AUTH_TIMEOUT_MS);
 
-    const appStateSub = AppState.addEventListener('change', (next) => {
+const appStateSub = AppState.addEventListener('change', (next) => {
       if (next !== 'active' || settled) {
         return;
       }
@@ -166,6 +166,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const error = firstQueryValue(queryParams.error);
 
         if (error) {
+          if (error.toLowerCase().includes('access_denied')) {
+            return null;
+          }
           throw new Error(parseGoogleOAuthError(error));
         }
 

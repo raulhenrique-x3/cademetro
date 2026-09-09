@@ -61,8 +61,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458602516",
+          "androidAppId": "ca-app-pub-3861308228006485~6983429442",
+          "iosAppId": "ca-app-pub-3861308228006485~6983429442",
           "userTrackingUsageDescription": "Essa permissão é utilizada para fornecer anúncios mais relevantes aos passageiros."
         }
       ]

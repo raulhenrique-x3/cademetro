@@ -33,10 +33,11 @@ export default function AuthCallbackScreen() {
     error?: string | string[];
   }>();
 
-  const accessToken = firstParam(params.accessToken);
+const accessToken = firstParam(params.accessToken);
   const refreshToken = firstParam(params.refreshToken);
   const error = firstParam(params.error);
-  const urlError = error ? parseGoogleOAuthError(error) : null;
+  const isCancel = !!error && error.toLowerCase().includes('access_denied');
+  const urlError = error && !isCancel ? parseGoogleOAuthError(error) : null;
 
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,6 +46,14 @@ export default function AuthCallbackScreen() {
   const displayError = urlError ?? errorMessage;
 
   useEffect(() => {
+if (error && error.toLowerCase().includes('access_denied')) {
+      if (!handledRef.current) {
+        handledRef.current = true;
+        router.replace('/login');
+      }
+      return;
+    }
+
     if (urlError) {
       if (!handledRef.current) {
         handledRef.current = true;
@@ -89,6 +98,7 @@ export default function AuthCallbackScreen() {
   }, [
     accessToken,
     refreshToken,
+    error,
     urlError,
     isAuthenticated,
     loginWithTokens,

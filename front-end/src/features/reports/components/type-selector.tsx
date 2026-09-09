@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import { ReportTypeString } from '@/api/types';
 import { REPORT_OPTIONS_DATA, ReportTypeOptionData } from '@/constants/metro';
-import { Radius, Spacing, Typography } from '@/constants/theme';
+import { Radius, Spacing, Typography, isDarkColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface TypeOption extends ReportTypeOptionData {
@@ -41,7 +41,7 @@ export interface TypeSelectorProps {
 
 export function TypeSelector({ value, onChange }: TypeSelectorProps) {
   const theme = useTheme();
-  const isDark = theme.background === '#090D16';
+  const isDark = isDarkColors(theme);
 
   const trainOptions = REPORT_OPTIONS.filter((o) => o.category === 'train');
   const statusOptions = REPORT_OPTIONS.filter((o) => o.category === 'status');
@@ -97,7 +97,7 @@ export function TypeSelector({ value, onChange }: TypeSelectorProps) {
                         backgroundColor: isSelected
                           ? optionColor
                           : isDark
-                          ? '#1E293B'
+                          ? '#27272A'
                           : '#F1F5F9',
                       },
                     ]}>
@@ -183,7 +183,7 @@ export function TypeSelector({ value, onChange }: TypeSelectorProps) {
                       backgroundColor: isSelected
                         ? optionColor
                         : isDark
-                        ? '#1E293B'
+                        ? '#27272A'
                         : '#F1F5F9',
                     },
                   ]}>

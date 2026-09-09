@@ -1,27 +1,30 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
-import {
-  InterstitialAd,
-  AdEventType,
-} from 'react-native-google-mobile-ads';
+import type { InterstitialAd as InterstitialAdType } from 'react-native-google-mobile-ads';
 import { getAdsConfig, getInterstitialAdUnitId } from '../ads-config';
 import { canShowInterstitial, recordInterstitialShown } from '../ads-service';
+import { getGoogleMobileAds, isGoogleMobileAdsAvailable, SafeAdEventType } from '../ads-native';
 
 export function useInterstitialAd() {
   const [isLoaded, setIsLoaded] = useState(false);
-  const interstitialRef = useRef<InterstitialAd | null>(null);
+  const interstitialRef = useRef<InterstitialAdType | null>(null);
   const unsubscribeLoadedRef = useRef<(() => void) | null>(null);
   const unsubscribeClosedRef = useRef<(() => void) | null>(null);
   const unsubscribeErrorRef = useRef<(() => void) | null>(null);
   const loadAdRef = useRef<() => void>(() => {});
 
   const loadAd = useCallback(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !isGoogleMobileAdsAvailable()) {
       return;
     }
 
     const config = getAdsConfig();
     if (!config.enabled || !config.interstitialsEnabled) {
+      return;
+    }
+
+    const adsModule = getGoogleMobileAds();
+    if (!adsModule || !adsModule.InterstitialAd) {
       return;
     }
 
@@ -31,21 +34,24 @@ export function useInterstitialAd() {
     if (unsubscribeErrorRef.current) unsubscribeErrorRef.current();
 
     const adUnitId = getInterstitialAdUnitId();
-    const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+    const interstitial = adsModule.InterstitialAd.createForAdRequest(adUnitId, {
       requestNonPersonalizedAdsOnly: true,
     });
 
     interstitialRef.current = interstitial;
+    const loadedEvent = adsModule.AdEventType?.LOADED || SafeAdEventType.LOADED;
+    const closedEvent = adsModule.AdEventType?.CLOSED || SafeAdEventType.CLOSED;
+    const errorEvent = adsModule.AdEventType?.ERROR || SafeAdEventType.ERROR;
 
     unsubscribeLoadedRef.current = interstitial.addAdEventListener(
-      AdEventType.LOADED,
+      loadedEvent,
       () => {
         setIsLoaded(true);
       },
     );
 
     unsubscribeClosedRef.current = interstitial.addAdEventListener(
-      AdEventType.CLOSED,
+      closedEvent,
       () => {
         setIsLoaded(false);
         recordInterstitialShown();
@@ -55,7 +61,7 @@ export function useInterstitialAd() {
     );
 
     unsubscribeErrorRef.current = interstitial.addAdEventListener(
-      AdEventType.ERROR,
+      errorEvent,
       () => {
         setIsLoaded(false);
       },
@@ -79,7 +85,7 @@ export function useInterstitialAd() {
   }, [loadAd]);
 
   const showInterstitial = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !isGoogleMobileAdsAvailable()) {
       return false;
     }
 

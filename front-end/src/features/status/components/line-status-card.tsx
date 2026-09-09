@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { TrainFront } from 'lucide-react-native';
 import { LineDto, LineStatusDto } from '@/api/types';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -50,7 +51,7 @@ export function LineStatusCard({ line, statusDto, onPress }: LineStatusCardProps
         <View style={styles.topRow}>
           <View style={styles.lineInfo}>
             <View style={[styles.lineBadge, { backgroundColor: line.color }]}>
-              <Text style={styles.lineBadgeText}>{line.code.split('-')[0]}</Text>
+              <TrainFront size={14} color="#FFFFFF" strokeWidth={2.2} />
             </View>
             <Text style={[styles.lineName, { color: theme.text }]} numberOfLines={1}>
               {line.name}
@@ -108,11 +109,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.small,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  lineBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
   },
   lineName: {
     fontSize: Typography.bodyBold.fontSize,
