@@ -168,6 +168,7 @@ export class AuthService {
       response_type: 'code',
       scope: 'openid email profile',
       access_type: 'online',
+      prompt: 'select_account',
       state,
     });
 

@@ -25,7 +25,8 @@ export default function AuthCallbackScreen() {
   }>();
 
   const { accessToken, refreshToken, error } = params;
-  const initialError = error ? parseGoogleOAuthError(error) : null;
+  const isCancel = !!error && error.toLowerCase().includes('access_denied');
+  const initialError = error && !isCancel ? parseGoogleOAuthError(error) : null;
 
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>(
     initialError ? 'error' : 'loading',
@@ -38,6 +39,10 @@ export default function AuthCallbackScreen() {
     handledRef.current = true;
 
     if (error) {
+      if (isCancel) {
+        router.replace('/login');
+        return;
+      }
       const friendlyError = parseGoogleOAuthError(error);
       showError(new Error(friendlyError));
       return;

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ArrowRight, Check, Compass } from 'lucide-react-native';
 import { DirectionDto } from '@/api/types';
-import { Radius, Spacing, Typography } from '@/constants/theme';
+import { Radius, Spacing, Typography, isDarkColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface DirectionSelectorProps {
@@ -21,7 +21,7 @@ export function DirectionSelector({
   lineColor,
 }: DirectionSelectorProps) {
   const theme = useTheme();
-  const isDark = theme.background === '#090D16';
+  const isDark = isDarkColors(theme);
   const activeColor = lineColor || theme.primary;
 
   if (!directions || directions.length === 0) {
@@ -72,7 +72,7 @@ export function DirectionSelector({
                       backgroundColor: isSelected
                         ? activeColor
                         : isDark
-                        ? '#1E293B'
+                        ? '#27272A'
                         : '#F1F5F9',
                     },
                   ]}>

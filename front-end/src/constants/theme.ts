@@ -48,27 +48,27 @@ export const Colors = {
   },
   dark: {
     // Legacy / Core tokens
-    text: '#F8FAFC',
-    background: '#090D16',
-    backgroundElement: '#131B2E',
-    backgroundSelected: '#1E293B',
-    textSecondary: '#94A3B8',
+    text: '#FAFAFA',
+    background: '#0A0A0A',
+    backgroundElement: '#18181B',
+    backgroundSelected: '#27272A',
+    textSecondary: '#A1A1AA',
 
     // Semantic tokens
-    foreground: '#F8FAFC',
-    muted: '#94A3B8',
-    mutedForeground: '#64748B',
-    card: '#131B2E',
-    cardForeground: '#F8FAFC',
-    border: '#1E293B',
+    foreground: '#FAFAFA',
+    muted: '#A1A1AA',
+    mutedForeground: '#71717A',
+    card: '#18181B',
+    cardForeground: '#FAFAFA',
+    border: '#27272A',
     primary: '#38BDF8',
-    primaryForeground: '#090D16',
+    primaryForeground: '#0A0A0A',
     success: '#34D399',
-    successForeground: '#064E3B',
+    successForeground: '#052E16',
     warning: '#FBBF24',
-    warningForeground: '#78350F',
+    warningForeground: '#451A03',
     destructive: '#F87171',
-    destructiveForeground: '#7F1D1D',
+    destructiveForeground: '#450A0A',
 
     // Metro Status semantic colors
     statusNormal: '#34D399',
@@ -80,14 +80,17 @@ export const Colors = {
     statusInterrupted: '#F87171',
     statusInterruptedBg: '#7F1D1D44',
     statusInterruptedBorder: '#991B1B',
-    statusUnknown: '#9CA3AF',
-    statusUnknownBg: '#37415144',
-    statusUnknownBorder: '#4B5563',
+    statusUnknown: '#A1A1AA',
+    statusUnknownBg: '#3F3F4644',
+    statusUnknownBorder: '#52525B',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export type ColorTokens = Record<ThemeColor, string>;
+
+export const isDarkColors = (colors: ColorTokens): boolean =>
+  colors.background === Colors.dark.background;
 
 export const Fonts = Platform.select({
   ios: {

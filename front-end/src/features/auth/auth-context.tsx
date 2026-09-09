@@ -119,6 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const error = queryParams.error as string | undefined;
 
       if (error) {
+        if (error.toLowerCase().includes('access_denied')) {
+          return null;
+        }
         throw new Error(parseGoogleOAuthError(error));
       }
 

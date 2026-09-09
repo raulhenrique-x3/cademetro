@@ -48,6 +48,7 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY_MS);
   const wasConnectedRef = useRef(false);
   const isConnectingRef = useRef(false);
+  const isConnectedRef = useRef(false);
   const connectRef = useRef<() => void>(() => {});
 
   const refetchSnapshots = useCallback(() => {
@@ -89,6 +90,7 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
 
       es.addEventListener('open', () => {
         isConnectingRef.current = false;
+        isConnectedRef.current = true;
         setIsConnected(true);
         setError(null);
         retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
@@ -102,12 +104,17 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
 
       // Heartbeat listener
       es.addEventListener('ping', () => {
+        isConnectedRef.current = true;
         setIsConnected(true);
         setError(null);
       });
 
       es.addEventListener('error', () => {
+        if (eventSourceRef.current !== es) {
+          return;
+        }
         isConnectingRef.current = false;
+        isConnectedRef.current = false;
         setIsConnected(false);
         setError('Conexão em tempo real perdida. Reconectando...');
 
@@ -220,7 +227,7 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
     // Reconnect when mobile app comes back from background to active
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        if (!eventSourceRef.current || !isConnected) {
+        if (!eventSourceRef.current || !isConnectedRef.current) {
           retryDelayRef.current = INITIAL_RETRY_DELAY_MS;
           connect();
         } else {
@@ -245,9 +252,10 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
         eventSourceRef.current = null;
       }
       isConnectingRef.current = false;
+      isConnectedRef.current = false;
       setIsConnected(false);
     };
-  }, [connect, isConnected, refetchSnapshots]);
+  }, [connect, refetchSnapshots]);
 
   return (
     <RealtimeContext.Provider value={{ isConnected, error, refetchSnapshots }}>

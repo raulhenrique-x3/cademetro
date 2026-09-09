@@ -21,7 +21,7 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { ReportTypeString } from '@/api/types';
-import { Radius, Spacing, Typography } from '@/constants/theme';
+import { Radius, Spacing, Typography, isDarkColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/context/toast-context';
 import { useAuth } from '@/features/auth/auth-context';
@@ -60,7 +60,7 @@ export function ReportComposer({
   onCancel,
 }: ReportComposerProps) {
   const theme = useTheme();
-  const isDark = theme.background === '#090D16';
+  const isDark = isDarkColors(theme);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { showError, showInfo, showSuccess } = useToast();
@@ -420,7 +420,7 @@ export function ReportComposer({
                       backgroundColor: isSelected
                         ? l.color
                         : isDark
-                        ? '#131B2E'
+                        ? '#18181B'
                         : '#FFFFFF',
                       borderColor: l.color,
                       borderWidth: isSelected ? 2 : 1,
