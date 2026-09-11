@@ -19,7 +19,7 @@ import { UsersService } from '../users/users.service.js';
 
 const ACCESS_EXPIRES_IN = (process.env.JWT_ACCESS_EXPIRES_IN ??
   '2h') as JwtSignOptions['expiresIn'];
-const REFRESH_TTL_MS = parseDuration(process.env.JWT_REFRESH_EXPIRES_IN ?? '30d');
+const REFRESH_TTL_MS = parseDuration(process.env.JWT_REFRESH_EXPIRES_IN ?? '7d');
 
 const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';

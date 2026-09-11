@@ -5,7 +5,7 @@ import * as Linking from 'expo-linking';
 import { authApi, parseGoogleOAuthError } from '@/api/auth';
 import { apiClient } from '@/api/client';
 import { LoginInput, RegisterInput } from '@/api/schemas';
-import { UserDto } from '@/api/types';
+import { ApiErrorResponse, UserDto } from '@/api/types';
 import { storage, AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/lib/storage';
 import { queryClient } from '@/lib/query-client';
 
@@ -44,6 +44,11 @@ function dismissGoogleAuthSession() {
   }
 }
 
+function isAuthFailure(error: unknown): boolean {
+  const statusCode = (error as ApiErrorResponse | undefined)?.statusCode;
+  return statusCode === 401 || statusCode === 403;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -61,10 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const me = await authApi.getMe();
       setUser(me);
-    } catch {
-      storage.removeItem(AUTH_TOKEN_KEY);
-      storage.removeItem(REFRESH_TOKEN_KEY);
-      setUser(null);
+    } catch (error) {
+      if (isAuthFailure(error)) {
+        storage.removeItem(AUTH_TOKEN_KEY);
+        storage.removeItem(REFRESH_TOKEN_KEY);
+        delete apiClient.defaults.headers.common.Authorization;
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -82,10 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((me) => {
         if (isMounted) setUser(me);
       })
-      .catch(() => {
-        if (isMounted) {
+      .catch((error) => {
+        if (isMounted && isAuthFailure(error)) {
           storage.removeItem(AUTH_TOKEN_KEY);
           storage.removeItem(REFRESH_TOKEN_KEY);
+          delete apiClient.defaults.headers.common.Authorization;
           setUser(null);
         }
       })

@@ -1,6 +1,6 @@
 # API: Authentication
 
-JWT-based with access token and refresh token rotation. Access token expiry default: 2 hours, refresh token TTL: 30 days.
+JWT-based with access token and refresh token rotation. Access token expiry default: 2 hours, refresh token TTL: 7 days (sliding, renewed on each refresh).
 
 ## `POST /auth/register`
 

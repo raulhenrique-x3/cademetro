@@ -17,6 +17,10 @@ export default defineConfig({
     alias: {
       'react-native': 'react-native-web',
       'expo-location': path.resolve(__dirname, 'tests/mocks/expo-location.ts'),
+      'expo-secure-store': path.resolve(
+        __dirname,
+        'tests/mocks/expo-secure-store.ts',
+      ),
       'react-native-google-mobile-ads': path.resolve(
         __dirname,
         'tests/mocks/react-native-google-mobile-ads.ts',

@@ -119,14 +119,22 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         } catch (refreshErr) {
           processQueue(refreshErr, null);
-          storage.removeItem(AUTH_TOKEN_KEY);
-          storage.removeItem(REFRESH_TOKEN_KEY);
-          return Promise.reject(normalizeError(refreshErr as AxiosError<ApiErrorResponse>));
+          const normalized = normalizeError(
+            refreshErr as AxiosError<ApiErrorResponse>,
+          );
+          if (normalized.statusCode === 401 || normalized.statusCode === 403) {
+            storage.removeItem(AUTH_TOKEN_KEY);
+            storage.removeItem(REFRESH_TOKEN_KEY);
+            delete apiClient.defaults.headers.common.Authorization;
+          }
+          return Promise.reject(normalized);
         } finally {
           isRefreshing = false;
         }
       } else {
         storage.removeItem(AUTH_TOKEN_KEY);
+        storage.removeItem(REFRESH_TOKEN_KEY);
+        delete apiClient.defaults.headers.common.Authorization;
       }
     }
 

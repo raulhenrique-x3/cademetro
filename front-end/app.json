@@ -25,7 +25,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -65,11 +67,19 @@
           "iosAppId": "ca-app-pub-3861308228006485~6983429442",
           "userTrackingUsageDescription": "Essa permissão é utilizada para fornecer anúncios mais relevantes aos passageiros."
         }
-      ]
+      ],
+      "expo-build-properties",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c98ff9d8-8b5d-4a4e-9ce7-9a3f1fd07828"
+      }
     }
   }
 }
