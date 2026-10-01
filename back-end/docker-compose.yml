@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"
     volumes:
       - cademetro_pg_data:/var/lib/postgresql/data
     healthcheck:
